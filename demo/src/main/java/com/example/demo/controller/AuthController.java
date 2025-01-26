@@ -25,7 +25,7 @@ public class AuthController {
 
     // Method to validate user credentials against the CSV file
     private ResponseEntity<Boolean> validateCredentials(String user, String password) {
-        String csvFile = "C:\\Users\\RJ\\Downloads\\user_creds.csv"; // Path to your CSV file
+        String csvFile = "C:\\Users\\RJ\\Documents\\project\\kuwartrack\\demo\\src\\main\\java\\com\\example\\demo\\controller\\user_creds.csv"; // Path to your CSV file kaya palitan neo to depende sa file path ng csv
         try {
             List<String> lines = Files.readAllLines(Paths.get(csvFile));
             boolean firstLine = true; // Flag to track the first line
