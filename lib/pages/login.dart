@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:convert';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -18,9 +18,10 @@ class _LoginState extends State<Login> {
   final TextEditingController _controller2 = TextEditingController();
 
   bool _passwordVisible = true;
-  bool _showError = false;
+  bool _showErrorLogging = false;
 
   Future<bool> _submit() async{
+    // dynamic result = await login(_controller1.text, _controller2.text);
     dynamic result = await Navigator.pushNamed(context, '/load_login', arguments: {'email': _controller1.text, 'password': _controller2.text});
 
     return result;
@@ -115,7 +116,7 @@ class _LoginState extends State<Login> {
               ),
             ),
 
-            Visibility(visible: _showError,
+            Visibility(visible: _showErrorLogging,
                 child: Text("Username or Password Incorrect",
                     style: TextStyle(color: Colors.red, fontFamily: 'Inter-Black'))
             ),
@@ -124,14 +125,21 @@ class _LoginState extends State<Login> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
                 child: IconButton(
                   icon: Image.asset('assets/images/Login_button.png'),
+
                   onPressed: () async {
                     bool show = await _submit();
-                    if(show==true){
+                    if(show==false){ // incorrect credentials
                       setState(() {
-                        _showError = show;
+                        _showErrorLogging = true;
+                      });
+                    }
+                    else{
+                      setState(() {
+                        _showErrorLogging = false;
                       });
                     }
                   },
+
                   highlightColor: Colors.purple, // Disable highlight color
                   hoverColor: Colors.transparent,
                 )
@@ -142,5 +150,6 @@ class _LoginState extends State<Login> {
       ),
     );
   }
-
 }
+
+

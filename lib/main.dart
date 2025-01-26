@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kuwartrack/pages/home.dart';
-import 'package:kuwartrack/pages/loading.dart';
-import 'package:kuwartrack/pages/choose_location.dart';
+import 'package:kuwartrack/pages/load_login.dart';
+// import 'package:kuwartrack/pages/choose_location.dart';
 import 'package:kuwartrack/pages/login.dart';
 
 
@@ -11,7 +11,7 @@ void main() {
       routes: {
         '/': (context) => Login(),
         '/home': (context) => Home(),
-        '/location': (context) => ChooseLocation(),
+        '/load_login': (context) => LoadLogin(),
       }
   )); // root widget as an argument
 }
