@@ -3,9 +3,14 @@ package com.example.demo.controller; // Your controller package
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth") // Base path for all methods in this controller
@@ -25,9 +30,15 @@ public class AuthController {
 
     // Method to validate user credentials against the CSV file
     private ResponseEntity<Boolean> validateCredentials(String user, String password) {
-        String csvFile = "C:\\Users\\RJ\\Documents\\project\\kuwartrack\\demo\\src\\main\\java\\com\\example\\demo\\controller\\user_creds.csv"; // Path to your CSV file kaya palitan neo to depende sa file path ng csv
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("user_creds.csv");// Path to your CSV file kaya palitan neo to depende sa file path ng csv
         try {
-            List<String> lines = Files.readAllLines(Paths.get(csvFile));
+            if (inputStream == null) {
+                throw new FileNotFoundException("File not found in classpath");
+            }
+            List<String> lines = new BufferedReader(new InputStreamReader(inputStream))
+                    .lines()
+                    .collect(Collectors.toList());
+            
             boolean firstLine = true; // Flag to track the first line
             for (String line : lines) {
                 if (firstLine) {
