@@ -27,7 +27,7 @@ class _LoadLoginState extends State<LoadLogin> {
   // }
 
   Future<bool> login(String user, String password) async {
-    final url = Uri.parse("https://23e5-130-105-115-165.ngrok-free.app/api/auth/login");
+    final url = Uri.parse("https://7611-130-105-115-165.ngrok-free.app/api/auth/login");
 
     final response = await http.post(
       url,
@@ -36,7 +36,14 @@ class _LoadLoginState extends State<LoadLogin> {
     );
 
     if (response.statusCode == 200) {
-      if(jsonDecode(response.body)==true){ // returns a dictionary-like structure. In this case, Returns true or false
+      if(jsonDecode(response.body)!=null){ // returns a dictionary-like structure. In this case, Returns true or false
+        // Decoding the JSON response
+        Map<String, dynamic> decodedResponse = jsonDecode(response.body);
+
+        var userId = decodedResponse['id'];
+
+        Navigator.pushReplacementNamed(context, '/home', arguments: {'user_id': userId});
+
         return true; // user credentials is correct.
       }
       else{ // user credentials is wrong
@@ -44,7 +51,9 @@ class _LoadLoginState extends State<LoadLogin> {
         return false;
       }
     }
-    else {
+    else {// user credentials is wrong
+      Navigator.pop(context, false);
+      return false;
       throw Exception("Failed to login: ${response.reasonPhrase}");
     }
   }
@@ -55,10 +64,10 @@ class _LoadLoginState extends State<LoadLogin> {
     data = data.isNotEmpty? data : ModalRoute.of(context)?.settings?.arguments as Map;
     login(data['email'], data['password']);
     return Scaffold(
-        backgroundColor: Colors.blue[900],
+        backgroundColor: Color(0xFF53197B),
         body: Center(
-          child: SpinKitFoldingCube(
-            color: Colors.yellowAccent,
+          child: SpinKitPouringHourGlass(
+            color: Colors.white,
             size: 50.0,
           ),
         )

@@ -1,7 +1,11 @@
 package com.example.demo.controller; // Your controller package
 
+import org.apache.juli.logging.Log;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -18,18 +22,18 @@ public class AuthController {
 
     // POST endpoint to handle login requests
     @PostMapping("/login")
-    public ResponseEntity<Boolean> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<LoginRequest> login(@RequestBody LoginRequest loginRequest) {
         return validateCredentials(loginRequest.getUser(), loginRequest.getPassword());
     }
 
     // GET endpoint to test login request (used for browser testing ko lang ito)
     @GetMapping("/login")
-    public ResponseEntity<Boolean> testLogin(@RequestParam String user, @RequestParam String password) { // ganto itsura ng arguments ?user=admin&password=admin
+    public ResponseEntity<LoginRequest> testLogin(@RequestParam String user, @RequestParam String password) { // ganto itsura ng arguments ?user=admin&password=admin
         return validateCredentials(user, password);
     }
 
     // Method to validate user credentials against the CSV file
-    private ResponseEntity<Boolean> validateCredentials(String user, String password) {
+    private ResponseEntity<LoginRequest> validateCredentials(String user, String password) {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("user_creds.csv");// Path to your CSV file kaya palitan neo to depende sa file path ng csv
         try {
             if (inputStream == null) {
@@ -49,7 +53,8 @@ public class AuthController {
                 String[] fields = line.split(","); // ["username", "password", "id"]
                 if (fields.length >= 2 && fields[0].equals(user) && fields[1].equals(password)) { // Check for array bounds
 //                    System.out.println("checkpoint");
-                    return ResponseEntity.ok(true);
+                    LoginRequest user_data = new LoginRequest(fields[0], fields[1], fields[2]);
+                    return ResponseEntity.ok(user_data);
                 }
             }
         } catch (Exception e) {
@@ -57,7 +62,7 @@ public class AuthController {
             return ResponseEntity.internalServerError().build(); // Important: Return an error response
         }
 //        System.out.println("false checkpoint");
-        return ResponseEntity.ok(false);
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 }
 
@@ -65,6 +70,14 @@ public class AuthController {
 class LoginRequest {
     private String user;
     private String password;
+    private String id;
+
+
+    public LoginRequest(String user_in, String password_in, String id_in){
+        this.user = user_in;
+        this.password = password_in;
+        this.id = id_in;
+    }
 
     // Getters and setters
     public String getUser() {
@@ -81,5 +94,13 @@ class LoginRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }
