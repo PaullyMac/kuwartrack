@@ -235,6 +235,9 @@ class Expenses {
     return percentages;
   }
 
+
+
+
   // get total transactions
   int getTotalTransactionsForAllCategoriesThisWeek(String category) {
     int counter = 0;
@@ -323,6 +326,30 @@ class Expenses {
     }
     return counter;
   }
+
+
+  // Method to get the percentage of a specific category from a specific date
+  double getCategoryPercentagesForCategoryOnSpecificDate(String category, String date) {
+    double totalSpentOnDate = 0;
+    double categorySpentOnDate = 0;
+
+    print("data " + date);
+    for (var expense in expenses) {
+      if (expense.date == date) {
+        double spent = double.tryParse(expense.money_spent) ?? 0;
+        totalSpentOnDate += spent;
+
+        if (expense.category == category) {
+          categorySpentOnDate += spent;
+        }
+      }
+    }
+
+    if (totalSpentOnDate == 0) return 0; // Avoid division by zero
+
+    return (categorySpentOnDate / totalSpentOnDate) * 100;
+  }
+
 
   // Method to get expenses of a specific category from a specific date
   List<Expense> getExpensesByCategoryAndDate(String category, String date) {

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:pie_chart/pie_chart.dart'; // Import for date formatting and parsing
 import 'package:kuwartrack/transaction_expense_card.dart';
 import 'package:kuwartrack/expense_class.dart';
+import 'package:kuwartrack/pages/edit.dart';
 
 
 class Transaction extends StatefulWidget {
@@ -43,8 +44,10 @@ class _TransactionState extends State<Transaction> {
   @override
   void initState() {
     super.initState();
+    user_id = widget.user_id;
     expenses = widget.expenses;
     expense_list = widget.expenses.expenses;
+    _selectedDate = DateTime.now();
 
     // get default data
     category_total_expenses= expenses.getTotalExpensesForAllCategoriesInCurrentDay();
@@ -144,9 +147,9 @@ class _TransactionState extends State<Transaction> {
 
   // Edit
   void _onTapEdit(String key){
+
     List<Expense> expenses_by_category_and_date = expenses.getExpensesByCategoryAndDate(key, DateFormat('yyyy-MM-dd').format(_selectedDate!).toString());
-
-
+    Navigator.push(context, MaterialPageRoute(builder: (context) => Edit(expenses: expenses,  expense_list: expenses_by_category_and_date, user_id: user_id,)));
 
   }
 

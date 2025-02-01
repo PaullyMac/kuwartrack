@@ -6,6 +6,7 @@ import 'package:pie_chart/pie_chart.dart'; // Import for date formatting and par
 import 'package:kuwartrack/expense_card.dart';
 import 'package:kuwartrack/expense_class.dart';
 import 'package:kuwartrack/pages/transaction.dart';
+import 'package:kuwartrack/pages/edit.dart';
 
 
 class Home extends StatefulWidget {
