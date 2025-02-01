@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:pie_chart/pie_chart.dart'; // Import for date formatting and parsing
 import 'package:kuwartrack/expense_card.dart';
 import 'package:kuwartrack/expense_class.dart';
+import 'package:kuwartrack/pages/transaction.dart';
 
 
 class Home extends StatefulWidget {
@@ -24,6 +25,7 @@ class _HomeState extends State<Home> {
   int transactions = 0;
   bool asc_or_desc = true; // ascending by default
   bool sort_by_type = true; // by default percentage
+  int _selectedNavigationIndex = 1; // home
 
   @override
   void initState() {
@@ -90,6 +92,27 @@ class _HomeState extends State<Home> {
       print('Error fetching data: $e');
     }
   }
+
+  // Navigation onTapped
+  void _onNavigationTapped(int index) {
+    setState(() {
+      _selectedNavigationIndex = index; // Update the selected index
+      // Navigate or perform actions based on the index:
+      switch (index) {
+        case 0:
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Transaction(expenses: expenses, user_id: data['user_id'],)));
+          break;
+        case 1:
+          break;
+        case 2:
+          break;
+      }
+    });
+  }
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -250,6 +273,7 @@ class _HomeState extends State<Home> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 1,
+        onTap: _onNavigationTapped,
         backgroundColor: Color(0xFFF68F6D), // Set the background color
         selectedItemColor: Colors.white, // Color for the selected item
         unselectedItemColor: Colors.black, // Color for unselected items
@@ -264,9 +288,29 @@ class _HomeState extends State<Home> {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Get data request
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://75ec-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final url = Uri.parse("https://c3ca-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},

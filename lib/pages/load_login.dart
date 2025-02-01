@@ -16,7 +16,7 @@ class _LoadLoginState extends State<LoadLogin> {
   String time = 'loading';
 
   Future<bool> login(String user, String password) async {
-    final url = Uri.parse("https://75ec-130-105-115-165.ngrok-free.app/api/auth/login");
+    final url = Uri.parse("https://c3ca-130-105-115-165.ngrok-free.app/api/auth/login");
 
     final response = await http.post(
       url,

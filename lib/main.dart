@@ -3,6 +3,7 @@ import 'package:kuwartrack/pages/home.dart';
 import 'package:kuwartrack/pages/load_login.dart';
 // import 'package:kuwartrack/pages/choose_location.dart';
 import 'package:kuwartrack/pages/login.dart';
+import 'package:kuwartrack/pages/transaction.dart';
 
 
 void main() {

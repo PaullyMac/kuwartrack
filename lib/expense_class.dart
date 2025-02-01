@@ -108,6 +108,91 @@ class Expenses {
     return categoryTotals;
   }
 
+  // Method to get total expenses for all categories this month
+  Map<String, double> getTotalExpensesForAllCategoriesInCurrentMonth() {
+    Map<String, double> categoryTotals = {};
+    DateTime now = DateTime.now();
+    DateTime startOfCurrentMonth = DateTime(now.year, now.month, 1); // Start of current month
+    DateTime endOfCurrentMonth = DateTime(now.year, now.month + 1, 0); // End of current month
+
+    for (Expense expense in expenses) {
+      try {
+        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date);
+
+        if (expenseDate.isAfter(startOfCurrentMonth.subtract(Duration(days: 1))) && // Corrected condition
+            expenseDate.isBefore(endOfCurrentMonth.add(Duration(days: 1)))) { // Corrected condition
+
+          double amountSpent = double.parse(expense.money_spent);
+
+          categoryTotals.update(
+            expense.category,
+                (existingTotal) => existingTotal + amountSpent,
+            ifAbsent: () => amountSpent,
+          );
+        }
+      } catch (e) {
+        print("Error parsing date or amount: $e");
+      }
+    }
+    return categoryTotals;
+  }
+
+  // Method to get total expenses for all categories this day
+  Map<String, double> getTotalExpensesForAllCategoriesInCurrentDay() {
+    Map<String, double> categoryTotals = {};
+    DateTime now = DateTime.now();
+    DateTime startOfDay = DateTime(now.year, now.month, now.day); // Start of today
+    DateTime endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59); // End of today (almost)
+
+    for (Expense expense in expenses) {
+      try {
+        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date); // Or skip if already DateTime
+
+        if (expenseDate.isAfter(startOfDay.subtract(const Duration(seconds: 1))) &&
+            expenseDate.isBefore(endOfDay.add(const Duration(seconds: 1)))) {
+          double amountSpent = double.parse(expense.money_spent);
+
+          categoryTotals.update(
+            expense.category,
+                (existingTotal) => existingTotal + amountSpent,
+            ifAbsent: () => amountSpent,
+          );
+        }
+      } catch (e) {
+        print("Error parsing date or amount: $e");
+      }
+    }
+    return categoryTotals;
+  }
+
+  // Method to get total expenses for all categories of a specific date
+  Map<String, double> getTotalExpensesForAllCategoriesInSpecificDate(DateTime date) {
+    Map<String, double> categoryTotals = {};
+    DateTime startOfDay = DateTime(date.year, date.month, date.day); // Start of the given date
+    DateTime endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59); // End of the given date (almost)
+
+    for (Expense expense in expenses) {
+      try {
+        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date); // Or skip if already DateTime
+
+        if (expenseDate.isAfter(startOfDay.subtract(const Duration(seconds: 1))) &&
+            expenseDate.isBefore(endOfDay.add(const Duration(seconds: 1)))) {
+          double amountSpent = double.parse(expense.money_spent);
+
+          categoryTotals.update(
+            expense.category,
+                (existingTotal) => existingTotal + amountSpent,
+            ifAbsent: () => amountSpent,
+          );
+        }
+      } catch (e) {
+        print("Error parsing date or amount: $e");
+      }
+    }
+    return categoryTotals;
+  }
+
+
 
   // get percentages
   Map<String, double> getCategoryPercentagesThisWeek(){
@@ -173,7 +258,6 @@ class Expenses {
     }
     return counter;
   }
-
   int getTotalTransactionsForAllCategoriesLastWeek(String category) {
     int counter = 0;
     DateTime now = DateTime.now();
@@ -196,7 +280,6 @@ class Expenses {
     }
     return counter;
   }
-
   int getTotalTransactionsForAllCategoriesLastMonth(String category) {
     int counter = 0;
     DateTime now = DateTime.now();
@@ -209,6 +292,27 @@ class Expenses {
 
         if (expenseDate.isAfter(startOfLastMonth.subtract(Duration(days: 1))) &&
             expenseDate.isBefore(endOfLastMonth.add(Duration(days: 1)))) {
+          if (category == expense.category) {
+            counter++;
+          }
+        }
+      } catch (e) {
+        print("Error parsing date or amount: $e");
+      }
+    }
+    return counter;
+  }
+  int getTotalTransactionsForCategoryOnSpecificDate(String category, DateTime date) {
+    int counter = 0;
+    DateTime startOfDay = DateTime(date.year, date.month, date.day);
+    DateTime endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+    for (Expense expense in expenses) {
+      try {
+        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date); // Or skip if already DateTime
+
+        if (expenseDate.isAfter(startOfDay.subtract(const Duration(seconds: 1))) &&
+            expenseDate.isBefore(endOfDay.add(const Duration(seconds: 1)))) {
           if (category == expense.category) {
             counter++;
           }
