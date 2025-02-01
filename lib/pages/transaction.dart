@@ -142,6 +142,14 @@ class _TransactionState extends State<Transaction> {
     }
   }
 
+  // Edit
+  void _onTapEdit(String key){
+    List<Expense> expenses_by_category_and_date = expenses.getExpensesByCategoryAndDate(key, DateFormat('yyyy-MM-dd').format(_selectedDate!).toString());
+
+
+
+  }
+
 
 
 
@@ -358,6 +366,7 @@ class _TransactionState extends State<Transaction> {
                               transactions: transactions.toString(),
                               totalSpent: totalSpent.toString(),
                               percentage: percentage.toString(),
+                              onTapEdit: () => _onTapEdit(entry.key), // pass the function itself, not _onTapEdit(entry.key) which is a result
                             );
                           }).toList(),
                         ),

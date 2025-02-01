@@ -324,4 +324,12 @@ class Expenses {
     return counter;
   }
 
+  // Method to get expenses of a specific category from a specific date
+  List<Expense> getExpensesByCategoryAndDate(String category, String date) {
+
+    List<Expense> output = expenses.where((expense) => expense.category == category && expense.date == date).toList();
+
+    return output;
+  }
+
 }
