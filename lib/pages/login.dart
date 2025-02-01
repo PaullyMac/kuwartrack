@@ -41,111 +41,113 @@ class _LoginState extends State<Login> {
             fit: BoxFit.cover,
           ),
         ),
-        child: Column(
-          // Add this line to stretch the Column to full width
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
-              child: Image.asset('assets/images/logo.png'),
-            ),
-            Text('Welcome Back!', style: TextStyle(color: Color(0xFF53197B), fontSize: 40, fontWeight: FontWeight.bold, fontFamily: 'ABeeZee')),
-            Text('Enter your credential to login', style: TextStyle(color: Color(0xFF53197B), fontSize: 20, fontFamily: 'ABeeZee')),
-            SizedBox(
-              height: 60,
-            ),
+        child: SingleChildScrollView(
+          child: Column(
+            // Add this line to stretch the Column to full width
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
+                child: Image.asset('assets/images/logo.png'),
+              ),
+              Text('Welcome Back!', style: TextStyle(color: Color(0xFF53197B), fontSize: 40, fontWeight: FontWeight.bold, fontFamily: 'ABeeZee')),
+              Text('Enter your credential to login', style: TextStyle(color: Color(0xFF53197B), fontSize: 20, fontFamily: 'ABeeZee')),
+              SizedBox(
+                height: 60,
+              ),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              child: Material(
-                color: Colors.transparent,
-                elevation: 20.0,
-                shadowColor: Colors.blue,
-                child: TextFormField(
-                  controller: _controller1,
-                  decoration: InputDecoration(
-                    prefixIcon: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Image.asset('assets/images/E-mail.png', width: 30, height: 30)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 20.0,
+                  shadowColor: Colors.blue,
+                  child: TextFormField(
+                    controller: _controller1,
+                    decoration: InputDecoration(
+                      prefixIcon: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Image.asset('assets/images/E-mail.png', width: 30, height: 30)
+                      ),
+                      fillColor: Colors.white,
+                      filled: true,
+                      labelText: 'E-Mail',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
                     ),
-                    fillColor: Colors.white,
-                    filled: true,
-                    labelText: 'E-Mail',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
                   ),
                 ),
               ),
-            ),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              child: Material(
-                color: Colors.transparent,
-                elevation: 20.0,
-                shadowColor: Colors.blue,
-                child:TextFormField(
-                    controller: _controller2,
-                    obscureText: _passwordVisible ,
-                    decoration: InputDecoration(
-                        prefixIcon: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Image.asset('assets/images/Password.png', width: 30, height: 30)
-                        ),
-                        fillColor: Colors.white,
-                        filled: true,
-                        labelText: 'Enter your Password',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            // Based on passwordVisible state choose the icon
-                            _passwordVisible
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Color(0xFF53197B),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 20.0,
+                  shadowColor: Colors.blue,
+                  child:TextFormField(
+                      controller: _controller2,
+                      obscureText: _passwordVisible ,
+                      decoration: InputDecoration(
+                          prefixIcon: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Image.asset('assets/images/Password.png', width: 30, height: 30)
                           ),
-                          onPressed: () {
-                            // Update the state i.e. toogle the state of passwordVisible variable
-                            setState(() {
-                              _passwordVisible = !_passwordVisible;
-                            });
-                          },
-                        )
-                    )
+                          fillColor: Colors.white,
+                          filled: true,
+                          labelText: 'Enter your Password',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              // Based on passwordVisible state choose the icon
+                              _passwordVisible
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Color(0xFF53197B),
+                            ),
+                            onPressed: () {
+                              // Update the state i.e. toogle the state of passwordVisible variable
+                              setState(() {
+                                _passwordVisible = !_passwordVisible;
+                              });
+                            },
+                          )
+                      )
+                  ),
                 ),
               ),
-            ),
 
-            Visibility(visible: _showErrorLogging,
-                child: Text("Username or Password Incorrect",
-                    style: TextStyle(color: Colors.red, fontFamily: 'Inter-Black'))
-            ),
+              Visibility(visible: _showErrorLogging,
+                  child: Text("Username or Password Incorrect",
+                      style: TextStyle(color: Colors.red, fontFamily: 'Inter-Black'))
+              ),
 
-            Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
-                child: IconButton(
-                  icon: Image.asset('assets/images/Login_button.png'),
+              Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
+                  child: IconButton(
+                    icon: Image.asset('assets/images/Login_button.png'),
 
-                  onPressed: () async {
-                    bool show = await _submit();
-                    if(show==false){ // incorrect credentials
-                      setState(() {
-                        _showErrorLogging = true;
-                      });
-                    }
-                    else{
-                      setState(() {
-                        _showErrorLogging = false;
-                      });
-                    }
-                  },
+                    onPressed: () async {
+                      bool show = await _submit();
+                      if(show==false){ // incorrect credentials
+                        setState(() {
+                          _showErrorLogging = true;
+                        });
+                      }
+                      else{
+                        setState(() {
+                          _showErrorLogging = false;
+                        });
+                      }
+                    },
 
-                  highlightColor: Colors.purple, // Disable highlight color
-                  hoverColor: Colors.transparent,
-                )
-            ),
+                    highlightColor: Colors.purple, // Disable highlight color
+                    hoverColor: Colors.transparent,
+                  )
+              ),
 
-          ],
+            ],
+          ),
         ),
       ),
     );

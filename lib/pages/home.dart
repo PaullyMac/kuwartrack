@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:pie_chart/pie_chart.dart'; // Import for date formatting and parsing
 import 'package:kuwartrack/expense_card.dart';
+import 'package:kuwartrack/expense_class.dart';
+
 
 class Home extends StatefulWidget {
   @override
@@ -20,6 +22,8 @@ class _HomeState extends State<Home> {
   late Map<String, double> pie_percentages;
   int _selectedIndexDate = 0;
   int transactions = 0;
+  bool asc_or_desc = true; // ascending by default
+  bool sort_by_type = true; // by default percentage
 
   @override
   void initState() {
@@ -40,16 +44,19 @@ class _HomeState extends State<Home> {
         case 0:
           pie_percentages = expenses.getCategoryPercentagesThisWeek();
           category_total_expenses = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
+          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
           overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
           break;
         case 1:
           pie_percentages = expenses.getCategoryPercentagesLastWeek();
           category_total_expenses = expenses.getTotalExpensesForAllCategoriesInLastWeek();
+          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
           overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
           break;
         case 2:
           pie_percentages = expenses.getCategoryPercentagesLastMonth();
           category_total_expenses = expenses.getTotalExpensesForAllCategoriesInLastMonth();
+          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
           overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
           break;
         default:
@@ -93,12 +100,11 @@ class _HomeState extends State<Home> {
         child: Column(
           children: [
 
+            // Logo and logout button
             Padding(
               padding: const EdgeInsets.all(10),
               child: Column(
-
                 children: [
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute space
                     children: [
@@ -122,19 +128,19 @@ class _HomeState extends State<Home> {
                       ),
                     ],
                   ),
-
                   SizedBox(height: 20),
                 ],
               ),
             ),
 
+
+            // Pie chart with period toggle buttons
             Expanded(
               child: Container(
                 child: Column(
                   children: [
                     MyToggleButtonExample(onPeriodChanged: _onPeriodChanged),
                     SizedBox(height: 20),
-
                     Text(
                       'You have saved [number] today!',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -151,7 +157,7 @@ class _HomeState extends State<Home> {
             // Bottom Card
             Container(
               height: 260,
-              margin: EdgeInsets.only(bottom: 60), // Keep your bottom margin
+              margin: EdgeInsets.only(bottom:0), // Keep your bottom margin
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Color(0xFFAE60CC),
@@ -164,24 +170,50 @@ class _HomeState extends State<Home> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      // Sort by widgets
+                      sort_by_type?
                       ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {setState(() {
+                          sort_by_type = !sort_by_type;
+                          category_total_expenses = sortedDesc(category_total_expenses, sort_by_type);
+                        });},
                         icon: Icon(Icons.sort),
-                        label: Text('Sort by'),
-                      ),
+                        label: Text('Sort by percentage'),
+                      ):
                       ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {setState(() {
+                          sort_by_type = !sort_by_type;
+                          category_total_expenses = sortedAsc(category_total_expenses, sort_by_type);
+                        });},
+                        icon: Icon(Icons.sort),
+                        label: Text('Sort by category'),
+                      ),
+                      // Sort Ascending or Descending Widgets
+                      asc_or_desc?
+                      ElevatedButton.icon(
+                        onPressed: () {setState(() {
+                          asc_or_desc = !asc_or_desc;
+                          category_total_expenses = sortedDesc(category_total_expenses, sort_by_type);
+                        });},
                         icon: Icon(Icons.arrow_upward),
                         label: Text('Ascending'),
+                      ):
+                      ElevatedButton.icon(
+                        onPressed: () {setState(() {
+                          asc_or_desc = !asc_or_desc;
+                          category_total_expenses = sortedAsc(category_total_expenses, sort_by_type);
+                        });},
+                        icon: Icon(Icons.arrow_downward),
+                        label: Text('Descending'),
                       ),
                     ],
                   ),
                   SizedBox(height: 10),
+                  // Expense list widgets
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
                         children:
-
                         category_total_expenses.entries.map((entry) {
                           String category = entry.key;
                           double totalSpent = entry.value;
@@ -217,10 +249,14 @@ class _HomeState extends State<Home> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 1,
+        backgroundColor: Color(0xFFF68F6D), // Set the background color
+        selectedItemColor: Colors.white, // Color for the selected item
+        unselectedItemColor: Colors.black, // Color for unselected items
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.attach_money, size: 50,), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.home, size: 50), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.settings, size: 50), label: ''),
         ],
       ),
     );
@@ -228,17 +264,14 @@ class _HomeState extends State<Home> {
 }
 
 
-
+// Get data request
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://7611-130-105-115-165.ngrok-free.app/api/auth/post_data");
-
+  final url = Uri.parse("https://75ec-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},
     body: jsonEncode({"user_id": user_id}),
   );
-  
-
   if (response.statusCode == 200) {
     if (jsonDecode(response.body) != null) {
       // Decoding the JSON response
@@ -260,6 +293,8 @@ Future<List<Expense>> get_data(String user_id) async {
   }
 }
 
+
+// Toggle Buttons
 class MyToggleButtonExample extends StatefulWidget {
   final Function(int) onPeriodChanged; // Define the callback
 
@@ -271,7 +306,6 @@ class MyToggleButtonExample extends StatefulWidget {
 
 class _MyToggleButtonExampleState extends State<MyToggleButtonExample> {
   int _selectedIndex = 0; // Initialize with the first button selected
-
   @override
   Widget build(BuildContext context) {
     return ToggleButtons(
@@ -314,238 +348,37 @@ class _MyToggleButtonExampleState extends State<MyToggleButtonExample> {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Expenses {
-  List<Expense> expenses;
-
-  Expenses(this.expenses);
-
-  // Methods for this week
-  Map<String, double> getTotalExpensesForAllCategoriesInCurrentWeek() {
-    Map<String, double> categoryTotals = {};
-    DateTime now = DateTime.now();
-    DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    DateTime endOfWeek = now.add(Duration(days: 7 - now.weekday));
-
-    for (Expense expense in expenses) {
-      try {
-
-        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date);
-
-        if (expenseDate.isAfter(startOfWeek.subtract(Duration(days:1))) &&
-            expenseDate.isBefore(endOfWeek.add(Duration(days:1)))) {
-          double amountSpent = double.parse(expense.money_spent);
-
-          if (categoryTotals.containsKey(expense.category)) {
-            categoryTotals[expense.category] = categoryTotals[expense.category]! + amountSpent;
-          } else {
-            categoryTotals[expense.category] = amountSpent;
-          }
-        }
-      } catch (e) {
-        print("Error parsing date or amount: $e");
-      }
-    }
-    return categoryTotals;
+//  sort by ascending function
+Map<String, double> sortedAsc(Map<String, double> inputExpenses, bool sortByType) {
+  var sortedEntries;
+  // Convert the map entries to a list and sort by keys
+  if(sortByType==true){ // sort by percentage
+    sortedEntries = inputExpenses.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+  }
+  else{ // sort by category
+    sortedEntries = inputExpenses.entries.toList()
+      ..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()));
   }
 
-  // Method to get total expenses for all categories last week
-  Map<String, double> getTotalExpensesForAllCategoriesInLastWeek() {
-    Map<String, double> categoryTotals = {};
-    DateTime now = DateTime.now();
-    DateTime startOfLastWeek = now.subtract(Duration(days: now.weekday + 6)); // Start of last week
-    DateTime endOfLastWeek = now.subtract(Duration(days: now.weekday)); // End of last week
-
-    for (Expense expense in expenses) {
-      try {
-        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date);
-
-        if (expenseDate.isAfter(startOfLastWeek.subtract(Duration(days: 1))) &&
-            expenseDate.isBefore(endOfLastWeek.add(Duration(days: 1)))) {
-          double amountSpent = double.parse(expense.money_spent);
-
-          if (categoryTotals.containsKey(expense.category)) {
-            categoryTotals[expense.category] = categoryTotals[expense.category]! + amountSpent;
-          } else {
-            categoryTotals[expense.category] = amountSpent;
-          }
-        }
-      } catch (e) {
-        print("Error parsing date or amount: $e");
-      }
-    }
-    return categoryTotals;
+  // Convert back to a Map and return
+  return Map.fromEntries(sortedEntries);
+}
+//  sort by descending function
+Map<String, double> sortedDesc(Map<String, double> inputExpenses, bool sortByType) {
+  var sortedEntries;
+  // Convert the map entries to a list and sort by keys
+  if(sortByType==true){ // sort by percentage
+    sortedEntries = inputExpenses.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+  }
+  else{ // sort by category
+    sortedEntries = inputExpenses.entries.toList()
+      ..sort((a, b) => b.key.toLowerCase().compareTo(a.key.toLowerCase()));
   }
 
-  // Method to get total expenses for all categories last month
-  Map<String, double> getTotalExpensesForAllCategoriesInLastMonth() {
-    Map<String, double> categoryTotals = {};
-    DateTime now = DateTime.now();
-    DateTime startOfLastMonth = DateTime(now.year, now.month - 1, 1); // Start of last month
-    DateTime endOfLastMonth = DateTime(now.year, now.month, 0); // End of last month
-
-    for (Expense expense in expenses) {
-      try {
-        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date);
-
-        if (expenseDate.isAfter(startOfLastMonth.subtract(Duration(days: 1))) &&
-            expenseDate.isBefore(endOfLastMonth.add(Duration(days: 1)))) {
-          double amountSpent = double.parse(expense.money_spent);
-
-          if (categoryTotals.containsKey(expense.category)) {
-            categoryTotals[expense.category] = categoryTotals[expense.category]! + amountSpent;
-          } else {
-            categoryTotals[expense.category] = amountSpent;
-          }
-        }
-      } catch (e) {
-        print("Error parsing date or amount: $e");
-      }
-    }
-    return categoryTotals;
-  }
-
-
-
-
-  // get percentages
-  Map<String, double> getCategoryPercentagesThisWeek(){
-    Map<String, double> percentages = {};
-    Map<String, double> categoryTotals = this.getTotalExpensesForAllCategoriesInCurrentWeek();
-    double totalExpense = categoryTotals.values.fold(0, (accumulator, element) => accumulator + element);
-    print("length is " + totalExpense.toString());
-
-    categoryTotals.forEach((key, value){
-      percentages[key] = (value/totalExpense)*100;
-    });
-
-
-    return percentages;
-  }
-
-  Map<String, double> getCategoryPercentagesLastWeek(){
-    Map<String, double> percentages = {};
-    Map<String, double> categoryTotals = this.getTotalExpensesForAllCategoriesInLastWeek();
-    double totalExpense = categoryTotals.values.fold(0, (accumulator, element) => accumulator + element);
-    print("length is " + totalExpense.toString());
-
-    categoryTotals.forEach((key, value){
-      percentages[key] = (value/totalExpense)*100;
-    });
-
-
-    return percentages;
-  }
-
-  Map<String, double> getCategoryPercentagesLastMonth(){
-    Map<String, double> percentages = {};
-    Map<String, double> categoryTotals = this.getTotalExpensesForAllCategoriesInLastMonth();
-    double totalExpense = categoryTotals.values.fold(0, (accumulator, element) => accumulator + element);
-
-    categoryTotals.forEach((key, value){
-      percentages[key] = (value/totalExpense)*100;
-    });
-
-    return percentages;
-  }
-
-  // get total transactions
-  int getTotalTransactionsForAllCategoriesThisWeek(String category) {
-    int counter = 0;
-    DateTime now = DateTime.now();
-    DateTime startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    DateTime endOfWeek = now.add(Duration(days: 7 - now.weekday)); // End of last week
-
-    for (Expense expense in expenses) {
-      try {
-        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date);
-
-        if (expenseDate.isAfter(startOfWeek.subtract(Duration(days: 1))) &&
-            expenseDate.isBefore(endOfWeek.add(Duration(days: 1)))) {
-          if (category == expense.category) {
-            counter++;
-          }
-        }
-      } catch (e) {
-        print("Error parsing date or amount: $e");
-      }
-    }
-    return counter;
-  }
-
-  int getTotalTransactionsForAllCategoriesLastWeek(String category) {
-    int counter = 0;
-    DateTime now = DateTime.now();
-    DateTime startOfLastWeek = now.subtract(Duration(days: now.weekday + 6)); // Start of last week
-    DateTime endOfLastWeek = now.subtract(Duration(days: now.weekday)); // End of last week
-
-    for (Expense expense in expenses) {
-      try {
-        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date);
-
-        if (expenseDate.isAfter(startOfLastWeek.subtract(Duration(days: 1))) &&
-            expenseDate.isBefore(endOfLastWeek.add(Duration(days: 1)))) {
-          if (category == expense.category) {
-            counter++;
-          }
-        }
-      } catch (e) {
-        print("Error parsing date or amount: $e");
-      }
-    }
-    return counter;
-  }
-
-  int getTotalTransactionsForAllCategoriesLastMonth(String category) {
-    int counter = 0;
-    DateTime now = DateTime.now();
-    DateTime startOfLastMonth = DateTime(now.year, now.month - 1, 1); // Start of last month
-    DateTime endOfLastMonth = DateTime(now.year, now.month, 0); // End of last week
-
-    for (Expense expense in expenses) {
-      try {
-        DateTime expenseDate = DateFormat('yyyy-MM-dd').parse(expense.date);
-
-        if (expenseDate.isAfter(startOfLastMonth.subtract(Duration(days: 1))) &&
-            expenseDate.isBefore(endOfLastMonth.add(Duration(days: 1)))) {
-          if (category == expense.category) {
-            counter++;
-          }
-        }
-      } catch (e) {
-        print("Error parsing date or amount: $e");
-      }
-    }
-    return counter;
-  }
-
+  // Convert back to a Map and return
+  return Map.fromEntries(sortedEntries);
 }
 
 
-class Expense{
-  late String category;
-  late String transaction;
-  late String money_spent;
-  late String date;
-
-
-  Expense(String in_category, String in_transaction, String in_money_spent, String in_date){
-    this.category = in_category;
-    this.transaction = in_transaction;
-    this.money_spent = in_money_spent;
-    this.date = in_date;}
-
-
-}

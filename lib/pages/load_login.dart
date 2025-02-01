@@ -15,19 +15,8 @@ class _LoadLoginState extends State<LoadLogin> {
 
   String time = 'loading';
 
-  // void loadHomePage(email, password) async {
-  //   Response response = await get(Uri.parse('http://192.168.0.15/login?Query=${email}&Query2=${password}'));
-  //   Map auth = jsonDecode(response.body);
-  //   if(auth['user_matched']==true){
-  //     Navigator.pushReplacementNamed(context, '/home');
-  //   }
-  //   else{
-  //     Navigator.pop(context, true);
-  //   }
-  // }
-
   Future<bool> login(String user, String password) async {
-    final url = Uri.parse("https://7611-130-105-115-165.ngrok-free.app/api/auth/login");
+    final url = Uri.parse("https://75ec-130-105-115-165.ngrok-free.app/api/auth/login");
 
     final response = await http.post(
       url,
@@ -74,57 +63,3 @@ class _LoadLoginState extends State<LoadLogin> {
     );
   }
 }
-
-
-
-
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:http/http.dart';
-// import 'package:kuwartrack/services/world_time.dart';
-// import 'package:flutter_spinkit/flutter_spinkit.dart';
-// import 'dart:convert';
-//
-// class Loading extends StatefulWidget {
-//   @override
-//   State<Loading> createState() => _LoadingState();
-// }
-//
-// class _LoadingState extends State<Loading> {
-//
-//   String time = 'loading';
-//
-//   void setupWorldTime() async {
-//     WorldTime instance = WorldTime(location: 'Berlin', flag: 'germany.png', url: 'Europe%2FBerlin');
-//     await instance.getTime();
-//     Navigator.pushReplacementNamed(context, '/home', arguments: {
-//       'location': instance.location,
-//       'flag': instance.flag,
-//       'time': instance.time,
-//       'isDaytime': instance.isDaytime
-//     });
-//   }
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     setupWorldTime();
-//     print('hey there!');
-//   }
-//
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.deepPurple,
-//       body: Center(
-//         child: SpinKitRotatingCircle(
-//           color: Colors.white,
-//           size: 50.0
-//         )
-//       ),
-//     );
-//   }
-// }
