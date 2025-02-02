@@ -461,112 +461,115 @@ class _TransactionState extends State<Transaction> {
           
           
           
-                Container(
-                  height: 260,
-                  margin: EdgeInsets.only(bottom:0, top: 50, left: 10, right: 10), // Keep your bottom margin
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFAE60CC),
-                    borderRadius: BorderRadius.circular(20), // Fully rounded corners
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(3, 3), // Added slight offset for depth
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-          
-                      // ADD CATEGORY
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  _showAddCategoryDialog(context);
-                                },
-                                child: Card(
-                                  elevation: 4.0, // Add a subtle shadow (optional)
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(60),
-                                  ),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                      ),
-                                      borderRadius: BorderRadius.circular(100), // Match the Card's borderRadius
-                                    ),
-                                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
-                                    child: Column(children: [Text('Add', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), Text('Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))],),
-                                  ),
-                                ),
-                              ),
-                                    
-                              // DETAILS
-                              Card(
-                                color: Colors.purple[100],
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                    Row(
-                                      children: [
-                                        Text('Date: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                        Text('${_selectedDate != null
-                                            ? DateFormat('MMMM dd, yyyy').format(_selectedDate!)  // Format the selected date
-                                            : DateFormat('MMMM dd, yyyy').format(DateTime.now())}')
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text('Overall Spent: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                        Text('₱${overallTotal}')
-                                      ],
-                                    )
-                                  ],),
-                                ),
-                              )
-                            ],
-                                    
-                          ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 30),
+                  child: Container(
+                    height: 260,
+                    margin: EdgeInsets.only(bottom:0, top: 50, left: 10, right: 10), // Keep your bottom margin
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFAE60CC),
+                      borderRadius: BorderRadius.circular(20), // Fully rounded corners
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(3, 3), // Added slight offset for depth
                         ),
-                      ),
-          
-                      // Expense list widgets
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children:
-                            category_total_expenses.entries.map((entry) {
-                              String category = entry.key;
-                              double totalSpent = entry.value;
-                              transactions = expenses.getTotalTransactionsForCategoryOnSpecificDate(entry.key, _selectedDate ?? DateTime.now());
-                              double percentage = (overallTotal > 0) ? (totalSpent / overallTotal) * 100 : 0; // Calculate percentage
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
 
-                              return TransactionExpenseCard(
-                                category: category,
-                                transactions: transactions.toString(),
-                                totalSpent: totalSpent.toString(),
-                                percentage: percentage.toString(),
-                                onTapEdit: () => _onTapEdit(entry.key), // pass the function itself, not _onTapEdit(entry.key) which is a result
-                              );
-                            }).toList(),
+                        // ADD CATEGORY
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    _showAddCategoryDialog(context);
+                                  },
+                                  child: Card(
+                                    elevation: 4.0, // Add a subtle shadow (optional)
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(60),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                        ),
+                                        borderRadius: BorderRadius.circular(100), // Match the Card's borderRadius
+                                      ),
+                                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+                                      child: Column(children: [Text('Add', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), Text('Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))],),
+                                    ),
+                                  ),
+                                ),
+
+                                // DETAILS
+                                Card(
+                                  color: Colors.purple[100],
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                      Row(
+                                        children: [
+                                          Text('Date: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                          Text('${_selectedDate != null
+                                              ? DateFormat('MMMM dd, yyyy').format(_selectedDate!)  // Format the selected date
+                                              : DateFormat('MMMM dd, yyyy').format(DateTime.now())}')
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text('Overall Spent: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                          Text('₱${overallTotal}')
+                                        ],
+                                      )
+                                    ],),
+                                  ),
+                                )
+                              ],
+
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+
+                        // Expense list widgets
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children:
+                              category_total_expenses.entries.map((entry) {
+                                String category = entry.key;
+                                double totalSpent = entry.value;
+                                transactions = expenses.getTotalTransactionsForCategoryOnSpecificDate(entry.key, _selectedDate ?? DateTime.now());
+                                double percentage = (overallTotal > 0) ? (totalSpent / overallTotal) * 100 : 0; // Calculate percentage
+
+                                return TransactionExpenseCard(
+                                  category: category,
+                                  transactions: transactions.toString(),
+                                  totalSpent: totalSpent.toString(),
+                                  percentage: percentage.toString(),
+                                  onTapEdit: () => _onTapEdit(entry.key), // pass the function itself, not _onTapEdit(entry.key) which is a result
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
           
