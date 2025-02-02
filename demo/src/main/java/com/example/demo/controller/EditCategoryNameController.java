@@ -16,53 +16,54 @@ import java.util.*;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
+
 @RestController
 @RequestMapping("/expenses")
-public class addController {
+public class EditCategoryNameController {
     private static final String BASE_DIRECTORY = "C:\\Users\\RJ\\Documents\\project\\kuwartrack\\demo\\src\\main\\data\\";
 
-    @PostMapping("/add")
-    public ResponseEntity<String> addExpense(@RequestBody ExpenseRequest request) {
+    @PutMapping("/edit-category-name")
+    public ResponseEntity<String> updateCategory(@RequestBody CategoryUpdateRequest request) {
         try {
             // Path to the user-specific CSV file
             String filePath = BASE_DIRECTORY + "\\" + request.getUserId() + "\\" + "expenses.csv";
 
-            // Read the current CSV file
             File csvFile = new File(filePath);
             if (!csvFile.exists()) {
                 return ResponseEntity.status(404).body("File not found");
             }
 
-            // Read all the lines in the CSV file
+            // Read all lines from the CSV file
             List<String> lines = new ArrayList<>();
+            boolean updated = false;
+
             try (BufferedReader reader = new BufferedReader(new FileReader(csvFile))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    lines.add(line);
+                    String[] fields = line.split(",");
+                    if (fields.length < 4) continue; // Skip malformed lines
+
+                    String category = fields[0];
+                    String transaction = fields[1];
+                    String spent = fields[2];
+                    String date = fields[3];
+
+                    // Check if the row matches the category and date
+                    if (category.equalsIgnoreCase(request.getOldCategory()) && date.equalsIgnoreCase(request.getDate())) {
+                        fields[0] = request.getNewCategory(); // Update category name
+                        updated = true;
+                    }
+
+                    lines.add(String.join(",", fields));
                 }
             }
 
-            // Check if the combination of category, transaction, and date already exists
-            for (String line : lines) {
-                String[] fields = line.split(",");
-                String category = fields[0];
-                String transaction = fields[1];
-                String spent = fields[2];
-                String date = fields[3];
-
-                // Check if the combination of category, transaction, and date already exists
-                if (category.equalsIgnoreCase(request.getCategory()) &&
-                        transaction.equalsIgnoreCase(request.getTransaction()) &&
-                        date.equalsIgnoreCase(request.getDate())) {
-                    return ResponseEntity.status(409).body("Expense already exists for this category, transaction, and date");
-                }
+            // If no updates were made, return a 404 response
+            if (!updated) {
+                return ResponseEntity.status(404).body("No matching records found to update");
             }
 
-            // If not found, add the new expense to the list
-            String newLine = request.getCategory() + "," + request.getTransaction() + "," + request.getSpent() + "," + request.getDate();
-            lines.add(newLine);
-
-            // Write the updated lines back to the CSV file
+            // Write the updated content back to the CSV file
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(csvFile))) {
                 for (String updatedLine : lines) {
                     writer.write(updatedLine);
@@ -70,37 +71,36 @@ public class addController {
                 }
             }
 
-            return ResponseEntity.ok("Expense added successfully");
+            return ResponseEntity.ok("Category updated successfully");
 
         } catch (IOException e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error adding expense");
+            return ResponseEntity.status(500).body("Error updating category");
         }
     }
 
     // Inner class to handle incoming request data
-    public static class ExpenseRequest {
-        private String category;
-        private String transaction;
+    public static class CategoryUpdateRequest {
+        private String oldCategory;
+        private String newCategory;
         private String date;
-        private String spent;
         private String userId;
 
         // Getters and Setters
-        public String getCategory() {
-            return category;
+        public String getOldCategory() {
+            return oldCategory;
         }
 
-        public void setCategory(String category) {
-            this.category = category;
+        public void setOldCategory(String oldCategory) {
+            this.oldCategory = oldCategory;
         }
 
-        public String getTransaction() {
-            return transaction;
+        public String getNewCategory() {
+            return newCategory;
         }
 
-        public void setTransaction(String transaction) {
-            this.transaction = transaction;
+        public void setNewCategory(String newCategory) {
+            this.newCategory = newCategory;
         }
 
         public String getDate() {
@@ -109,14 +109,6 @@ public class addController {
 
         public void setDate(String date) {
             this.date = date;
-        }
-
-        public String getSpent() {
-            return spent;
-        }
-
-        public void setSpent(String spent) {
-            this.spent = spent;
         }
 
         public String getUserId() {
