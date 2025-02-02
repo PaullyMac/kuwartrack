@@ -40,6 +40,9 @@ class _TransactionState extends State<Transaction> {
   late String user_id;
   double todayBudget = 0;
   DateTime? _selectedDate;
+  double remainingBudget = 0;
+  double todayBudgetValue = 0;
+  double totalSavingsValue = 0;
 
   @override
   void initState() {
@@ -52,6 +55,7 @@ class _TransactionState extends State<Transaction> {
     // get default data
     category_total_expenses= expenses.getTotalExpensesForAllCategoriesInCurrentDay();
     overallTotal = category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+    remainingBudget = todayBudgetValue - overallTotal;
 
     // get data for current week
     category_total_expenses_current_week = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
@@ -66,6 +70,7 @@ class _TransactionState extends State<Transaction> {
     overallTotalThisDay = category_total_expenses_current_day.values.fold(0, (accumulator, element) => accumulator + element);
 
 
+    fetchBudgetData();
     user_id = widget.user_id;
     isLoading = false;
   }
@@ -88,37 +93,170 @@ class _TransactionState extends State<Transaction> {
   }
 
 
-  double currentSavings = 250;
 
-  void setTodayBudget() {
+  // fetch expenses
+  Future<void> fetchExpenses(String userId) async {
+    try {
+      List<Expense> fetchedExpenses = await get_data(userId);
+      setState(() {
+        expenses.expenses  = fetchedExpenses;
+        expense_list = expenses.expenses;
+
+        // get default data
+        category_total_expenses = expenses.getTotalExpensesForAllCategoriesInSpecificDate(_selectedDate!); // You can safely dereference with `!` because it's no longer null here
+        overallTotal = category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+
+        // get data for current week
+        category_total_expenses_current_week = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
+        overallTotalThisWeek = category_total_expenses_current_week.values.fold(0, (accumulator, element) => accumulator + element);
+
+        // get data for current month
+        category_total_expenses_this_month = expenses.getTotalExpensesForAllCategoriesInCurrentMonth();
+        overallTotalThisMonth = category_total_expenses_this_month.values.fold(0, (accumulator, element) => accumulator + element);
+
+        // get data for current day
+        category_total_expenses_current_day = expenses.getTotalExpensesForAllCategoriesInCurrentDay();
+        overallTotalThisDay = category_total_expenses_current_day.values.fold(0, (accumulator, element) => accumulator + element);
+      });
+    } catch (e) {
+      // Handle error gracefully
+      print('Error fetching data: $e');
+    }
+  }
+
+  Future<void> fetchBudgetData() async {
+    final url = Uri.parse('https://e585-130-105-115-165.ngrok-free.app/expenses/get_budget?userId=$user_id');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      double todayBudget = data['today_budget'];
+      double totalSavings = data['total_savings'];
+
+      print("Today's Budget: $todayBudget");
+      print("Total Savings: $totalSavings");
+
+      setState(() {
+        remainingBudget = todayBudget-overallTotal;
+        todayBudgetValue = todayBudget;
+        totalSavingsValue = totalSavings;
+      });
+    } else {
+      print("Error fetching budget data: ${response.body}");
+    }
+  }
+
+
+  Future<void> transferToBudget(double amount) async {
+    final url = Uri.parse('https://e585-130-105-115-165.ngrok-free.app/expenses/transfer_savings');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "userId": user_id,
+        "amount": amount,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      fetchBudgetData();
+      print("Transfer successful: ${response.body}");
+    } else {
+      print("Error: ${response.body}");
+    }
+  }
+  void showTransferDialog() {
+    TextEditingController amountController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) {
-        TextEditingController budgetController = TextEditingController();
         return AlertDialog(
-          title: Text("Set Today's Budget"),
+          title: Text("Transfer from Savings"),
           content: TextField(
-            controller: budgetController,
+            controller: amountController,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: "Enter Amount",
-            ),
+            decoration: InputDecoration(labelText: "Amount to Transfer"),
           ),
           actions: [
             TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            TextButton(
               onPressed: () {
-                setState(() {
-                  todayBudget = double.tryParse(budgetController.text) ?? todayBudget;
-                });
-                Navigator.of(context).pop();
+                double? amount = double.tryParse(amountController.text);
+                if (amount != null && amount > 0) {
+                  transferToBudget(amount);
+                  Navigator.pop(context);
+                }
               },
-              child: Text("Save"),
+              child: Text("Transfer"),
             ),
           ],
         );
       },
     );
   }
+
+
+  Future<void> updateTodayBudget(double newBudget) async {
+    final url = Uri.parse('https://e585-130-105-115-165.ngrok-free.app/expenses/update_budget');
+
+    final response = await http.put(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "userId": user_id,
+        "todayBudget": newBudget,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print("Budget updated successfully!");
+      fetchBudgetData(); // Refresh UI after update
+    } else {
+      print("Failed to update budget: ${response.body}");
+    }
+  }
+  void setTodayBudget() {
+    double newBudget = todayBudgetValue;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Set Today's Budget"),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            onChanged: (value) {
+              newBudget = double.tryParse(value) ?? todayBudgetValue;
+            },
+            decoration: InputDecoration(
+              hintText: "Enter new budget ",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                updateTodayBudget(newBudget);
+                Navigator.pop(context);
+              },
+              child: Text("Set Budget"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
 
 
 
@@ -196,6 +334,118 @@ class _TransactionState extends State<Transaction> {
   }
 
 
+  // add category
+  void _addCategory(String category, String transaction, String moneySpent, String date, String userId) async {
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/add-category");
+
+    final data = {
+      'category': category.toLowerCase(),
+      'transaction': transaction.toLowerCase(),
+      'moneySpent': moneySpent,
+      'date': date,
+      'userId': userId,
+    };
+
+
+    final scaffoldContext = context;
+
+    try {
+      final response = await http.post(
+        url,
+        body: json.encode(data),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 201) {
+        fetchExpenses(userId);
+        print("Expense added successfully!");
+      } else if (response.statusCode == 409) {
+        if (scaffoldContext.mounted) {
+          ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+            const SnackBar(content: Text("Failed to add category. Please try another name for your transaction or category.")),
+          );
+        }
+        print("Duplicate entry! Expense already exists.");
+      } else {
+        print("Failed to add expense: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+  void _showAddCategoryDialog(BuildContext context) {
+    final categoryController = TextEditingController();
+    final transactionController = TextEditingController();
+    final moneyController = TextEditingController();
+
+    bool isSaveEnabled = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            void validateInputs() {
+              setState(() {
+                isSaveEnabled = categoryController.text.isNotEmpty &&
+                    transactionController.text.isNotEmpty &&
+                    moneyController.text.isNotEmpty &&
+                    double.tryParse(moneyController.text) != null;
+              });
+            }
+
+            return AlertDialog(
+              title: Text("Add Category"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: categoryController,
+                    decoration: InputDecoration(labelText: "Enter category name:"),
+                    onChanged: (value) => validateInputs(),
+                  ),
+                  TextField(
+                    controller: transactionController,
+                    decoration: InputDecoration(labelText: "Enter transaction name:"),
+                    onChanged: (value) => validateInputs(),
+                  ),
+                  TextField(
+                    controller: moneyController,
+                    decoration: InputDecoration(labelText: "Enter money amount:"),
+                    keyboardType: TextInputType.number, // Numeric keyboard
+                    onChanged: (value) => validateInputs(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: isSaveEnabled
+                      ? () {
+                    String newCategory = categoryController.text;
+                    String newTransaction = transactionController.text;
+                    String newMoney = moneyController.text;
+
+                    _addCategory(newCategory, newTransaction, newMoney,
+                        DateFormat('yyyy-MM-dd').format(_selectedDate!).toString(), user_id);
+
+                    Navigator.of(context).pop();
+                  }
+                      : null, // Disables button if conditions aren't met
+                  child: Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
 
 
@@ -237,11 +487,27 @@ class _TransactionState extends State<Transaction> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    savingsBox("CURRENT SAVINGS", currentSavings, textColor: normalTextColor),
+
+                    Column(
+                      children: [
+                        savingsBox("CURRENT BUDGET", todayBudgetValue),
+                        SizedBox(height: 10,),
+                        savingsBox("CURRENT SAVINGS", totalSavingsValue),
+                      ],
+                    ),
                     SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: setTodayBudget,
-                      child: savingsBox("Set Today's Budget", null, textColor: normalTextColor),
+                    Column(
+                      children: [
+                        GestureDetector(
+                          onTap: showTransferDialog,
+                          child: savingsBox("Set budget from savings", null),
+                        ),
+                        SizedBox(height: 10,),
+                        GestureDetector(
+                          onTap: setTodayBudget,
+                          child: savingsBox("Set Today's Budget", null),
+                        ),
+                      ],
                     ),
                     IconButton(
                       icon: Image.asset(
@@ -292,8 +558,8 @@ class _TransactionState extends State<Transaction> {
                         ),
                         SizedBox(height: 5),
                         Text(
-                          "₱${todayBudget.toStringAsFixed(2)}",
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: normalTextColor),
+                          "₱${remainingBudget.toStringAsFixed(2)}",
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: remainingBudget<0?Colors.red:Colors.black),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -322,7 +588,7 @@ class _TransactionState extends State<Transaction> {
                       padding: const EdgeInsets.fromLTRB(45, 25, 45, 25),
                       child: Column(
                         children: [
-                          Text('Today', style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold, color: normalTextColor)),
+                          Text(DateFormat('EEEE').format(_selectedDate!).toString(), style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -331,113 +597,115 @@ class _TransactionState extends State<Transaction> {
           
           
           
-                Container(
-                  height: 260,
-                  margin: EdgeInsets.only(bottom:0, top: 50, left: 10, right: 10), // Keep your bottom margin
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.black : Color(0xFFAE60CC),
-                    borderRadius: BorderRadius.circular(20), // Fully rounded corners
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(3, 3), // Added slight offset for depth
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-          
-                      // ADD CATEGORY
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  // Define the action you want to perform on tap
-                                  print('Card clicked!');
-                                },
-                                child: Card(
-                                  elevation: 4.0, // Add a subtle shadow (optional)
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(60),
-                                  ),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                      ),
-                                      borderRadius: BorderRadius.circular(100), // Match the Card's borderRadius
-                                    ),
-                                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
-                                    child: Column(children: [Text('Add', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: normalTextColor)), Text('Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: normalTextColor))],),
-                                  ),
-                                ),
-                              ),
-                                    
-                              // DETAILS
-                              Card(
-                                color: Colors.purple[100],
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                    Row(
-                                      children: [
-                                        Text('Date: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: normalTextColor)),
-                                        Text('${_selectedDate != null
-                                            ? DateFormat('MMMM dd, yyyy').format(_selectedDate!)  // Format the selected date
-                                            : DateFormat('MMMM dd, yyyy').format(DateTime.now())}', style: TextStyle(color: normalTextColor))
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Text('Overall Spent: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: normalTextColor)),
-                                        Text('₱${overallTotal}', style: TextStyle(color: normalTextColor))
-                                      ],
-                                    )
-                                  ],),
-                                ),
-                              )
-                            ],
-                                    
-                          ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 30),
+                  child: Container(
+                    height: 260,
+                    margin: EdgeInsets.only(bottom:0, top: 50, left: 10, right: 10), // Keep your bottom margin
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.black : Color(0xFFAE60CC),
+                      borderRadius: BorderRadius.circular(20), // Fully rounded corners
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10,
+                          offset: Offset(3, 3), // Added slight offset for depth
                         ),
-                      ),
-          
-                      // Expense list widgets
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children:
-                            category_total_expenses.entries.map((entry) {
-                              String category = entry.key;
-                              double totalSpent = entry.value;
-                              transactions = expenses.getTotalTransactionsForCategoryOnSpecificDate(entry.key, _selectedDate ?? DateTime.now());
-                              double percentage = (overallTotal > 0) ? (totalSpent / overallTotal) * 100 : 0; // Calculate percentage
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
 
-                              return TransactionExpenseCard(
-                                category: category,
-                                transactions: transactions.toString(),
-                                totalSpent: totalSpent.toString(),
-                                percentage: percentage.toString(),
-                                onTapEdit: () => _onTapEdit(entry.key), // pass the function itself, not _onTapEdit(entry.key) which is a result
-                              );
-                            }).toList(),
+                        // ADD CATEGORY
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    _showAddCategoryDialog(context);
+                                  },
+                                  child: Card(
+                                    elevation: 4.0, // Add a subtle shadow (optional)
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(60),
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                        ),
+                                        borderRadius: BorderRadius.circular(100), // Match the Card's borderRadius
+                                      ),
+                                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+                                      child: Column(children: [Text('Add', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: normalTextColor)), Text('Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: normalTextColor))],),
+                                    ),
+                                  ),
+                                ),
+
+                                // DETAILS
+                                Card(
+                                  color: Colors.purple[100],
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                      Row(
+                                        children: [
+                                          Text('Date: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: normalTextColor)),
+                                          Text('${_selectedDate != null
+                                              ? DateFormat('MMMM dd, yyyy').format(_selectedDate!)  // Format the selected date
+                                              : DateFormat('MMMM dd, yyyy').format(DateTime.now())}', style: TextStyle(color: normalTextColor))
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text('Overall Spent: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: normalTextColor)),
+                                          Text('₱${overallTotal}', style: TextStyle(color: normalTextColor))
+                                        ],
+                                      )
+                                    ],),
+                                  ),
+                                )
+                              ],
+
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+
+                        // Expense list widgets
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children:
+                              category_total_expenses.entries.map((entry) {
+                                String category = entry.key;
+                                double totalSpent = entry.value;
+                                transactions = expenses.getTotalTransactionsForCategoryOnSpecificDate(entry.key, _selectedDate ?? DateTime.now());
+                                double percentage = (overallTotal > 0) ? (totalSpent / overallTotal) * 100 : 0; // Calculate percentage
+
+                                return TransactionExpenseCard(
+                                  category: category,
+                                  transactions: transactions.toString(),
+                                  totalSpent: totalSpent.toString(),
+                                  percentage: percentage.toString(),
+                                  onTapEdit: () => _onTapEdit(entry.key), // pass the function itself, not _onTapEdit(entry.key) which is a result
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
           
@@ -505,7 +773,7 @@ class _TransactionState extends State<Transaction> {
 
 
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},
@@ -531,3 +799,6 @@ Future<List<Expense>> get_data(String user_id) async {
     throw Exception('Failed to get data');
   }
 }
+
+
+

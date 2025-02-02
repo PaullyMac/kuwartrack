@@ -13,17 +13,31 @@ class _LoadLoginState extends State<LoadLogin> {
   String time = 'loading';
 
   Future<bool> login(String user, String password) async {
-    if (!mounted) return false;
-    
-    await Future.delayed(Duration(seconds: 2));
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/api/auth/login");
 
-    if (user == 'admin' && password == 'admin') {
-      if (!mounted) return false;
-      // Change this line back to navigate to home
-      Navigator.pushReplacementNamed(context, '/home', arguments: {'user_id': 'admin'});
-      return true;
-    } else {
-      if (!mounted) return false;
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"user": user, "password": password}),
+    );
+
+    if (response.statusCode == 200) {
+      if(jsonDecode(response.body)!=null){ // returns a dictionary-like structure. In this case, Returns true or false
+        // Decoding the JSON response
+        Map<String, dynamic> decodedResponse = jsonDecode(response.body);
+
+        var userId = decodedResponse['id'];
+
+        Navigator.pushReplacementNamed(context, '/home', arguments: {'user_id': userId});
+
+        return true; // user credentials is correct.
+      }
+      else{ // user credentials is wrong
+        Navigator.pop(context, false);
+        return false;
+      }
+    }
+    else {// user credentials is wrong
       Navigator.pop(context, false);
       return false;
     }

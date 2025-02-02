@@ -22,67 +22,81 @@ class _HomeState extends State<Home> {
   Map<String, double> category_total_expenses = {};
   bool isLoading = true;
   late double overallTotal;
+  Map<String, double> pie_percentages = {};
   int _selectedIndexDate = 0;
   int transactions = 0;
-  bool asc_or_desc = true;
-  bool sort_by_type = true;
-  int _selectedNavigationIndex = 0;
-  
-  Map<String, double> pie_percentages = {
-    "Food": 30.0,
-    "Transportation": 20.0,
-    "Entertainment": 15.0,
-    "Shopping": 25.0,
-    "Bills": 10.0,
-  };
+  bool asc_or_desc = true; // ascending by default
+  bool sort_by_type = true; // by default percentage
+  int _selectedNavigationIndex = 1; // home
+  double savings = 0;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialize mock expense data with correct constructor parameters
-    expense_list = [
-      Expense("Food", "Lunch", "3000", "2024-03-20"),
-      Expense("Transportation", "Bus", "2000", "2024-03-20"),
-      Expense("Entertainment", "Movies", "1500", "2024-03-20"),
-      Expense("Shopping", "Clothes", "2500", "2024-03-20"),
-      Expense("Bills", "Electricity", "1000", "2024-03-20"),
-    ];
-    
-    expenses = Expenses(expense_list);
-    
-    category_total_expenses = {
-      "Food": 3000.0,
-      "Transportation": 2000.0,
-      "Entertainment": 1500.0,
-      "Shopping": 2500.0,
-      "Bills": 1000.0,
-    };
-    
-    overallTotal = category_total_expenses.values.fold(0, (acc, val) => acc + val);
-    isLoading = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Fetch user ID and trigger data fetching
+      data = ModalRoute.of(context)?.settings?.arguments as Map;
+      if (data.containsKey('user_id')) {
+        fetchExpenses(data['user_id']);
+        fetchBudgetData();
+      }
+    });
   }
 
   void _onPeriodChanged(int index) {
     setState(() {
       _selectedIndexDate = index;
-      // Keep using the same hardcoded values for all periods
-      pie_percentages = {
-        "Food": 30.0,
-        "Transportation": 20.0,
-        "Entertainment": 15.0,
-        "Shopping": 25.0,
-        "Bills": 10.0,
-      };
-      category_total_expenses = {
-        "Food": 3000.0,
-        "Transportation": 2000.0,
-        "Entertainment": 1500.0,
-        "Shopping": 2500.0,
-        "Bills": 1000.0,
-      };
-      overallTotal = category_total_expenses.values.fold(0, (acc, val) => acc + val);
+      switch(_selectedIndexDate){
+        case 0:
+          pie_percentages = expenses.getCategoryPercentagesThisWeek();
+          category_total_expenses = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
+          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
+          overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+          break;
+        case 1:
+          pie_percentages = expenses.getCategoryPercentagesLastWeek();
+          category_total_expenses = expenses.getTotalExpensesForAllCategoriesInLastWeek();
+          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
+          overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+          break;
+        case 2:
+          pie_percentages = expenses.getCategoryPercentagesLastMonth();
+          category_total_expenses = expenses.getTotalExpensesForAllCategoriesInLastMonth();
+          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
+          overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+          break;
+        default:
+          pie_percentages = expenses.getCategoryPercentagesThisWeek(); break;
+      }
     });
+  }
+
+  // initial render
+  Future<void> fetchExpenses(String userId) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+      List<Expense> fetchedExpenses = await get_data(userId);
+      setState(() {
+        expense_list = fetchedExpenses;
+        expenses = Expenses(fetchedExpenses);
+        print("heresay " + expense_list.toString());
+        category_total_expenses = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
+        // print("here?" + expense_list.length.toString());
+        // get the total money spent for this week
+        overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+        pie_percentages = expenses.getCategoryPercentagesThisWeek();
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        expenses = Expenses([]);
+        isLoading = false;
+      });
+      // Handle error gracefully
+      print('Error fetching data: $e');
+    }
   }
 
   // Navigation onTapped
@@ -119,6 +133,29 @@ class _HomeState extends State<Home> {
         break;
     }
   }
+
+  Future<void> fetchBudgetData() async {
+    final url = Uri.parse('https://e585-130-105-115-165.ngrok-free.app/expenses/get_budget?userId=${data['user_id']}');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      double todayBudget = data['today_budget'];
+      double totalSavings = data['total_savings'];
+
+      print("Today's Budget: $todayBudget");
+      print("Total Savings: $totalSavings");
+
+      setState(() {
+        savings = totalSavings;
+      });
+    } else {
+      print("Error fetching budget data: ${response.body}");
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -171,16 +208,30 @@ class _HomeState extends State<Home> {
                     MyToggleButtonExample(onPeriodChanged: _onPeriodChanged),
                     SizedBox(height: 20),
                     Text(
-                      'You have saved [number] today!',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      savings > 0
+                          ? 'You have saved \₱${savings} today!'
+                          : savings < 0
+                          ? 'You have exceeded over \₱${savings} today!'
+                          : 'You have not saved anything today',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: savings < 0
+                            ? Colors.red
+                            : savings == 0
+                            ? Colors.black
+                            : Colors.green,
+                      ),
                     ),
-                    Expanded(child: PieChart(dataMap: pie_percentages.isNotEmpty? pie_percentages: {"No record yet": 0})),
+                    Expanded(
+                      child: PieChart(
+                        dataMap: pie_percentages.isNotEmpty ? pie_percentages : {"No record yet": 0},
+                      ),
+                    ),
                   ],
-                )
+                ),
               ),
             ),
-
-
 
 
             // Bottom Card
@@ -319,7 +370,7 @@ class _HomeState extends State<Home> {
 
 // Get data request
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},

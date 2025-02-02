@@ -32,6 +32,7 @@ class _EditState extends State<Edit> {
   double todayBudget = 0;
   String percentage = '0';
   late String user_id_data;
+  late String category_name;
 
 
 
@@ -45,11 +46,12 @@ class _EditState extends State<Edit> {
     if(expense_list_category_data.isNotEmpty){
       user_id_data = widget.user_id;
       sample_data = expense_list_category_data.first;
+      category_name = sample_data.category;
       date = DateTime.parse(sample_data.date);
       date_formatted = DateFormat('MMMM dd, yyyy').format(date);
       all_category_total_expenses= general_expenses_data.getTotalExpensesForAllCategoriesInSpecificDate(date);
       overallTotal = all_category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
-      percentage = general_expenses_data.getCategoryPercentagesForCategoryOnSpecificDate(sample_data.category, sample_data.date).toStringAsFixed(2);
+      percentage = general_expenses_data.getCategoryPercentagesForCategoryOnSpecificDate(category_name, sample_data.date).toStringAsFixed(2);
       totalSpentCategory = expense_list_category_data.fold(0, (sum, expense) => sum + (double.tryParse(expense.money_spent) ?? 0));
     }
 
@@ -57,7 +59,7 @@ class _EditState extends State<Edit> {
 
   // Get data request
   Future<List<Expense>> get_data(String user_id) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/api/auth/post_data");
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
@@ -89,13 +91,23 @@ class _EditState extends State<Edit> {
       List<Expense> fetchedExpenses = await get_data(userId);
       setState(() {
         general_expenses_data = Expenses(fetchedExpenses);
-        expense_list_category_data = general_expenses_data.getExpensesByCategoryAndDate(sample_data.category, sample_data.date);
+        expense_list_category_data = general_expenses_data.getExpensesByCategoryAndDate(category_name, sample_data.date);
+        sample_data = expense_list_category_data.first;
         all_category_total_expenses= general_expenses_data.getTotalExpensesForAllCategoriesInSpecificDate(date);
         overallTotal = all_category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
-        percentage = general_expenses_data.getCategoryPercentagesForCategoryOnSpecificDate(sample_data.category, sample_data.date).toStringAsFixed(2);
+        percentage = general_expenses_data.getCategoryPercentagesForCategoryOnSpecificDate(category_name, sample_data.date).toStringAsFixed(2);
         totalSpentCategory = expense_list_category_data.fold(0, (sum, expense) => sum + (double.tryParse(expense.money_spent) ?? 0));
       });
     } catch (e) {
+      setState(() {
+        general_expenses_data = Expenses([]);
+        expense_list_category_data = [];
+        all_category_total_expenses= {};
+        overallTotal = 0;
+        percentage = '0';
+        totalSpentCategory = 0;
+      });
+      print("error recovery");
       // Handle error gracefully
       print('Error fetching data: $e');
     }
@@ -104,7 +116,7 @@ class _EditState extends State<Edit> {
 
 
   void _updateExpense(Expense expense, String newTransaction, String newAmount) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/update");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/update");
 
     final response = await http.put(
       url,
@@ -174,7 +186,7 @@ class _EditState extends State<Edit> {
   }
 
   void _deleteExpense(String category, String transaction, String date, String userId) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/delete");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/delete");
 
     // Prepare the data to be sent in the request body
     final data = {
@@ -205,9 +217,8 @@ class _EditState extends State<Edit> {
 
 
   void _addExpense(Expense expense, BuildContext context) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/add");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/add");
 
-    // Prepare the data to be sent in the request body
     final data = {
       'category': expense.category,
       'transaction': expense.transaction,
@@ -215,6 +226,9 @@ class _EditState extends State<Edit> {
       'date': expense.date,
       'userId': user_id_data,
     };
+
+    // Save a local reference to the context
+    final scaffoldContext = context;
 
     try {
       final response = await http.post(
@@ -227,24 +241,26 @@ class _EditState extends State<Edit> {
         fetchExpenses(user_id_data);
         print("Expense added successfully");
       } else {
-        if (mounted) {
-          // Show alert if the expense already exists
-          _showExpenseExistsDialog(context);
+        if (scaffoldContext.mounted) {
+          ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+            const SnackBar(content: Text("Failed to add expense. Please try another name for your transaction.")),
+          );
         }
         print("Failed to add expense: ${response.statusCode}");
       }
     } catch (e) {
+      if (scaffoldContext.mounted) {
+        ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+          SnackBar(content: Text("Error: $e")),
+        );
+      }
       print("Error: $e");
     }
   }
-
-
   void _showAddExpenseDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        Expense expense; // Initialize Expense object
-
+      builder: (BuildContext dialogContext) {
         final transactionController = TextEditingController();
         final amountController = TextEditingController();
 
@@ -267,22 +283,21 @@ class _EditState extends State<Edit> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(dialogContext).pop(); // Close the dialog
               },
               child: const Text("Cancel"),
             ),
             TextButton(
               onPressed: () {
-                expense = Expense(
-                  sample_data.category,
+                final expense = Expense(
+                  category_name,
                   transactionController.text,
                   amountController.text,
                   sample_data.date,
                 );
 
-                _addExpense(expense, context); // Pass context to handle the dialog
-
-                Navigator.of(context).pop(); // Close the dialog after trying to add expense
+                Navigator.of(dialogContext).pop(); // Close the dialog **before** async call
+                _addExpense(expense, context);
               },
               child: const Text("Save"),
             ),
@@ -293,6 +308,75 @@ class _EditState extends State<Edit> {
   }
 
 
+
+
+  void _editCategoryname(String oldCategory, String newCategory, String date, String userId) async {
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/edit-category-name");
+
+    final data = {
+      'oldCategory': oldCategory,
+      'newCategory': newCategory,
+      'date': date,
+      'userId': userId,
+    };
+
+    try {
+      final response = await http.put(
+        url,
+        body: json.encode(data),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        category_name = newCategory;
+        fetchExpenses(user_id_data);
+        print("Category updated successfully");
+      } else {
+        print("Failed to update category: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+  void _showEditCategoryNameDialog(BuildContext context, Expense expense) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final categoryController = TextEditingController(text: expense.category);
+
+        return AlertDialog(
+          title: Text("Edit Category Name:\n${expense.category}" ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: categoryController,
+                decoration: InputDecoration(labelText: "Enter category name: "),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                String newCategoryName = categoryController.text;
+
+                _editCategoryname(expense.category, newCategoryName, sample_data.date, user_id_data);
+
+                Navigator.of(context).pop();
+              },
+              child: Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
 
   @override
@@ -408,7 +492,7 @@ class _EditState extends State<Edit> {
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(sample_data.category, style: TextStyle(fontWeight: FontWeight.bold)),
+                                              Text(category_name, style: TextStyle(fontWeight: FontWeight.bold)),
                                               Text(percentage + "%", style: TextStyle(fontWeight: FontWeight.bold)),
                                             ],
                                           ),
@@ -484,6 +568,7 @@ class _EditState extends State<Edit> {
                                                 ),
                                               ),
                                               child: InkWell(
+                                                  onTap: ()=>{_showEditCategoryNameDialog(context, sample_data)},
                                                 child: Ink(
                                                   decoration: BoxDecoration(
                                                     borderRadius: BorderRadius.circular(20),
@@ -582,9 +667,6 @@ class _EditState extends State<Edit> {
                                         );
                                       },
                                     ),
-
-
-
                                   ],
                                 ),
                               ),
@@ -612,20 +694,17 @@ class _EditState extends State<Edit> {
 
 
 
-
-
-
-void _showExpenseExistsDialog(BuildContext context) {
+void _showDuplicateExpenseDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text("Expense Already Exists"),
-        content: const Text("This expense already exists. Please check the details and try again."),
+        title: const Text("Duplicate Expense"),
+        content: const Text("This expense already exists. Please enter a different transaction."),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
+              Navigator.of(context).pop(); // Close dialog
             },
             child: const Text("OK"),
           ),
@@ -634,6 +713,7 @@ void _showExpenseExistsDialog(BuildContext context) {
     },
   );
 }
+
 
 
 
