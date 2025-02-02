@@ -231,7 +231,7 @@ class _TransactionState extends State<Transaction> {
 
   // add category
   void _addCategory(String category, String transaction, String moneySpent, String date, String userId) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/add-category");
+    final url = Uri.parse("https://4fd6-130-105-115-165.ngrok-free.app/expenses/add-category");
 
     final data = {
       'category': category.toLowerCase(),
@@ -634,7 +634,7 @@ class _TransactionState extends State<Transaction> {
 
 
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final url = Uri.parse("https://4fd6-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},
