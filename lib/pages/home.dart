@@ -27,6 +27,7 @@ class _HomeState extends State<Home> {
   bool asc_or_desc = true; // ascending by default
   bool sort_by_type = true; // by default percentage
   int _selectedNavigationIndex = 1; // home
+  double savings = 0;
 
   @override
   void initState() {
@@ -36,6 +37,7 @@ class _HomeState extends State<Home> {
       data = ModalRoute.of(context)?.settings?.arguments as Map;
       if (data.containsKey('user_id')) {
         fetchExpenses(data['user_id']);
+        fetchBudgetData();
       }
     });
   }
@@ -113,7 +115,26 @@ class _HomeState extends State<Home> {
     });
   }
 
+  Future<void> fetchBudgetData() async {
+    final url = Uri.parse('https://e585-130-105-115-165.ngrok-free.app/expenses/get_budget?userId=${data['user_id']}');
 
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      double todayBudget = data['today_budget'];
+      double totalSavings = data['total_savings'];
+
+      print("Today's Budget: $todayBudget");
+      print("Total Savings: $totalSavings");
+
+      setState(() {
+        savings = totalSavings;
+      });
+    } else {
+      print("Error fetching budget data: ${response.body}");
+    }
+  }
 
 
 
@@ -168,16 +189,30 @@ class _HomeState extends State<Home> {
                     MyToggleButtonExample(onPeriodChanged: _onPeriodChanged),
                     SizedBox(height: 20),
                     Text(
-                      'You have saved [number] today!',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      savings > 0
+                          ? 'You have saved \₱${savings} today!'
+                          : savings < 0
+                          ? 'You have exceeded over \₱${savings} today!'
+                          : 'You have not saved anything today',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: savings < 0
+                            ? Colors.red
+                            : savings == 0
+                            ? Colors.black
+                            : Colors.green,
+                      ),
                     ),
-                    Expanded(child: PieChart(dataMap: pie_percentages.isNotEmpty? pie_percentages: {"No record yet": 0})),
+                    Expanded(
+                      child: PieChart(
+                        dataMap: pie_percentages.isNotEmpty ? pie_percentages : {"No record yet": 0},
+                      ),
+                    ),
                   ],
-                )
+                ),
               ),
             ),
-
-
 
 
             // Bottom Card
@@ -316,7 +351,7 @@ class _HomeState extends State<Home> {
 
 // Get data request
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://4fd6-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},

@@ -40,6 +40,9 @@ class _TransactionState extends State<Transaction> {
   late String user_id;
   double todayBudget = 0;
   DateTime? _selectedDate;
+  double remainingBudget = 0;
+  double todayBudgetValue = 0;
+  double totalSavingsValue = 0;
 
   @override
   void initState() {
@@ -52,6 +55,7 @@ class _TransactionState extends State<Transaction> {
     // get default data
     category_total_expenses= expenses.getTotalExpensesForAllCategoriesInCurrentDay();
     overallTotal = category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+    remainingBudget = todayBudgetValue - overallTotal;
 
     // get data for current week
     category_total_expenses_current_week = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
@@ -66,6 +70,7 @@ class _TransactionState extends State<Transaction> {
     overallTotalThisDay = category_total_expenses_current_day.values.fold(0, (accumulator, element) => accumulator + element);
 
 
+    fetchBudgetData();
     user_id = widget.user_id;
     isLoading = false;
   }
@@ -87,38 +92,6 @@ class _TransactionState extends State<Transaction> {
     });
   }
 
-
-  double currentSavings = 250;
-
-  void setTodayBudget() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        TextEditingController budgetController = TextEditingController();
-        return AlertDialog(
-          title: Text("Set Today's Budget"),
-          content: TextField(
-            controller: budgetController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: "Enter Amount",
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  todayBudget = double.tryParse(budgetController.text) ?? todayBudget;
-                });
-                Navigator.of(context).pop();
-              },
-              child: Text("Save"),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
 
   // fetch expenses
@@ -150,6 +123,141 @@ class _TransactionState extends State<Transaction> {
       print('Error fetching data: $e');
     }
   }
+
+  Future<void> fetchBudgetData() async {
+    final url = Uri.parse('https://e585-130-105-115-165.ngrok-free.app/expenses/get_budget?userId=$user_id');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      double todayBudget = data['today_budget'];
+      double totalSavings = data['total_savings'];
+
+      print("Today's Budget: $todayBudget");
+      print("Total Savings: $totalSavings");
+
+      setState(() {
+        remainingBudget = todayBudget-overallTotal;
+        todayBudgetValue = todayBudget;
+        totalSavingsValue = totalSavings;
+      });
+    } else {
+      print("Error fetching budget data: ${response.body}");
+    }
+  }
+
+
+  Future<void> transferToBudget(double amount) async {
+    final url = Uri.parse('https://e585-130-105-115-165.ngrok-free.app/expenses/transfer_savings');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "userId": user_id,
+        "amount": amount,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      fetchBudgetData();
+      print("Transfer successful: ${response.body}");
+    } else {
+      print("Error: ${response.body}");
+    }
+  }
+  void showTransferDialog() {
+    TextEditingController amountController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Transfer from Savings"),
+          content: TextField(
+            controller: amountController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: "Amount to Transfer"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                double? amount = double.tryParse(amountController.text);
+                if (amount != null && amount > 0) {
+                  transferToBudget(amount);
+                  Navigator.pop(context);
+                }
+              },
+              child: Text("Transfer"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+  Future<void> updateTodayBudget(double newBudget) async {
+    final url = Uri.parse('https://e585-130-105-115-165.ngrok-free.app/expenses/update_budget');
+
+    final response = await http.put(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "userId": user_id,
+        "todayBudget": newBudget,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print("Budget updated successfully!");
+      fetchBudgetData(); // Refresh UI after update
+    } else {
+      print("Failed to update budget: ${response.body}");
+    }
+  }
+  void setTodayBudget() {
+    double newBudget = todayBudgetValue;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Set Today's Budget"),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            onChanged: (value) {
+              newBudget = double.tryParse(value) ?? todayBudgetValue;
+            },
+            decoration: InputDecoration(
+              hintText: "Enter new budget ",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                updateTodayBudget(newBudget);
+                Navigator.pop(context);
+              },
+              child: Text("Set Budget"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
+
 
 
   // calendar
@@ -226,12 +334,9 @@ class _TransactionState extends State<Transaction> {
   }
 
 
-
-
-
   // add category
   void _addCategory(String category, String transaction, String moneySpent, String date, String userId) async {
-    final url = Uri.parse("https://4fd6-130-105-115-165.ngrok-free.app/expenses/add-category");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/add-category");
 
     final data = {
       'category': category.toLowerCase(),
@@ -368,11 +473,27 @@ class _TransactionState extends State<Transaction> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    savingsBox("CURRENT SAVINGS", currentSavings),
+
+                    Column(
+                      children: [
+                        savingsBox("CURRENT BUDGET", todayBudgetValue),
+                        SizedBox(height: 10,),
+                        savingsBox("CURRENT SAVINGS", totalSavingsValue),
+                      ],
+                    ),
                     SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: setTodayBudget,
-                      child: savingsBox("Set Today's Budget", null),
+                    Column(
+                      children: [
+                        GestureDetector(
+                          onTap: showTransferDialog,
+                          child: savingsBox("Set budget from savings", null),
+                        ),
+                        SizedBox(height: 10,),
+                        GestureDetector(
+                          onTap: setTodayBudget,
+                          child: savingsBox("Set Today's Budget", null),
+                        ),
+                      ],
                     ),
                     IconButton(
                       icon: Image.asset(
@@ -422,8 +543,8 @@ class _TransactionState extends State<Transaction> {
                         ),
                         SizedBox(height: 5),
                         Text(
-                          "₱${todayBudget.toStringAsFixed(2)}",
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                          "₱${remainingBudget.toStringAsFixed(2)}",
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: remainingBudget<0?Colors.red:Colors.black),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -637,7 +758,7 @@ class _TransactionState extends State<Transaction> {
 
 
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://4fd6-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},
