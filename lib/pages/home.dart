@@ -7,6 +7,7 @@ import 'package:kuwartrack/expense_card.dart';
 import 'package:kuwartrack/expense_class.dart';
 import 'package:kuwartrack/pages/transaction.dart';
 import 'package:kuwartrack/pages/edit.dart';
+import 'package:kuwartrack/pages/settings.dart';
 
 
 class Home extends StatefulWidget {
@@ -19,101 +20,105 @@ class _HomeState extends State<Home> {
   late Expenses expenses;
   late List<Expense> expense_list;
   Map<String, double> category_total_expenses = {};
-  bool isLoading = true; // To manage loading state
+  bool isLoading = true;
   late double overallTotal;
-  late Map<String, double> pie_percentages;
   int _selectedIndexDate = 0;
   int transactions = 0;
-  bool asc_or_desc = true; // ascending by default
-  bool sort_by_type = true; // by default percentage
-  int _selectedNavigationIndex = 1; // home
+  bool asc_or_desc = true;
+  bool sort_by_type = true;
+  int _selectedNavigationIndex = 0;
+  
+  Map<String, double> pie_percentages = {
+    "Food": 30.0,
+    "Transportation": 20.0,
+    "Entertainment": 15.0,
+    "Shopping": 25.0,
+    "Bills": 10.0,
+  };
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Fetch user ID and trigger data fetching
-      data = ModalRoute.of(context)?.settings?.arguments as Map;
-      if (data.containsKey('user_id')) {
-        fetchExpenses(data['user_id']);
-      }
-    });
+    
+    // Initialize mock expense data with correct constructor parameters
+    expense_list = [
+      Expense("Food", "Lunch", "3000", "2024-03-20"),
+      Expense("Transportation", "Bus", "2000", "2024-03-20"),
+      Expense("Entertainment", "Movies", "1500", "2024-03-20"),
+      Expense("Shopping", "Clothes", "2500", "2024-03-20"),
+      Expense("Bills", "Electricity", "1000", "2024-03-20"),
+    ];
+    
+    expenses = Expenses(expense_list);
+    
+    category_total_expenses = {
+      "Food": 3000.0,
+      "Transportation": 2000.0,
+      "Entertainment": 1500.0,
+      "Shopping": 2500.0,
+      "Bills": 1000.0,
+    };
+    
+    overallTotal = category_total_expenses.values.fold(0, (acc, val) => acc + val);
+    isLoading = false;
   }
 
   void _onPeriodChanged(int index) {
     setState(() {
       _selectedIndexDate = index;
-      switch(_selectedIndexDate){
-        case 0:
-          pie_percentages = expenses.getCategoryPercentagesThisWeek();
-          category_total_expenses = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
-          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
-          overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
-          break;
-        case 1:
-          pie_percentages = expenses.getCategoryPercentagesLastWeek();
-          category_total_expenses = expenses.getTotalExpensesForAllCategoriesInLastWeek();
-          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
-          overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
-          break;
-        case 2:
-          pie_percentages = expenses.getCategoryPercentagesLastMonth();
-          category_total_expenses = expenses.getTotalExpensesForAllCategoriesInLastMonth();
-          category_total_expenses = asc_or_desc?sortedAsc(category_total_expenses, sort_by_type):sortedDesc(category_total_expenses, sort_by_type);
-          overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
-          break;
-        default:
-          pie_percentages = expenses.getCategoryPercentagesThisWeek(); break;
-      }
+      // Keep using the same hardcoded values for all periods
+      pie_percentages = {
+        "Food": 30.0,
+        "Transportation": 20.0,
+        "Entertainment": 15.0,
+        "Shopping": 25.0,
+        "Bills": 10.0,
+      };
+      category_total_expenses = {
+        "Food": 3000.0,
+        "Transportation": 2000.0,
+        "Entertainment": 1500.0,
+        "Shopping": 2500.0,
+        "Bills": 1000.0,
+      };
+      overallTotal = category_total_expenses.values.fold(0, (acc, val) => acc + val);
     });
-  }
-
-  // initial render
-  Future<void> fetchExpenses(String userId) async {
-    try {
-      setState(() {
-        isLoading = true;
-      });
-      List<Expense> fetchedExpenses = await get_data(userId);
-      setState(() {
-        expense_list = fetchedExpenses;
-        expenses = Expenses(fetchedExpenses);
-        category_total_expenses = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
-        // print("here?" + expense_list.length.toString());
-        // get the total money spent for this week
-        overallTotal =  category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
-        pie_percentages = expenses.getCategoryPercentagesThisWeek();
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      // Handle error gracefully
-      print('Error fetching data: $e');
-    }
   }
 
   // Navigation onTapped
   void _onNavigationTapped(int index) {
+    if (!mounted) return;
+    
     setState(() {
-      _selectedNavigationIndex = index; // Update the selected index
-      // Navigate or perform actions based on the index:
-      switch (index) {
-        case 0:
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Transaction(expenses: expenses, user_id: data['user_id'],)));
-          break;
-        case 1:
-          break;
-        case 2:
-          break;
-      }
+      _selectedNavigationIndex = index;
     });
+
+    switch (index) {
+      case 0: // Transaction page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Transaction(
+              expenses: expenses,
+              user_id: data['user_id'] ?? 'admin'
+            )
+          )
+        );
+        break;
+      
+      case 1: // Home page - stay here
+        break;
+      
+      case 2: // Settings page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Settings()
+          )
+        );
+        break;
+    }
   }
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -276,16 +281,16 @@ class _HomeState extends State<Home> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.attach_money, size: 50), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.home, size: 50), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.settings, size: 50), label: ''),
+        ],
+        currentIndex: _selectedNavigationIndex,
         onTap: _onNavigationTapped,
         backgroundColor: Color(0xFFF68F6D), // Set the background color
         selectedItemColor: Colors.white, // Color for the selected item
         unselectedItemColor: Colors.black, // Color for unselected items
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.attach_money, size: 50,), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.home, size: 50), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.settings, size: 50), label: ''),
-        ],
       ),
     );
   }
@@ -428,5 +433,3 @@ Map<String, double> sortedDesc(Map<String, double> inputExpenses, bool sortByTyp
   // Convert back to a Map and return
   return Map.fromEntries(sortedEntries);
 }
-
-

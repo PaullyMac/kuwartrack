@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class LoadLogin extends StatefulWidget {
@@ -12,45 +10,28 @@ class LoadLogin extends StatefulWidget {
 
 class _LoadLoginState extends State<LoadLogin> {
   Map data = {};
-
   String time = 'loading';
 
   Future<bool> login(String user, String password) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/login");
+    if (!mounted) return false;
+    
+    await Future.delayed(Duration(seconds: 2));
 
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"user": user, "password": password}),
-    );
-
-    if (response.statusCode == 200) {
-      if(jsonDecode(response.body)!=null){ // returns a dictionary-like structure. In this case, Returns true or false
-        // Decoding the JSON response
-        Map<String, dynamic> decodedResponse = jsonDecode(response.body);
-
-        var userId = decodedResponse['id'];
-
-        Navigator.pushReplacementNamed(context, '/home', arguments: {'user_id': userId});
-
-        return true; // user credentials is correct.
-      }
-      else{ // user credentials is wrong
-        Navigator.pop(context, false);
-        return false;
-      }
-    }
-    else {// user credentials is wrong
+    if (user == 'admin' && password == 'admin') {
+      if (!mounted) return false;
+      // Change this line back to navigate to home
+      Navigator.pushReplacementNamed(context, '/home', arguments: {'user_id': 'admin'});
+      return true;
+    } else {
+      if (!mounted) return false;
       Navigator.pop(context, false);
       return false;
-      throw Exception("Failed to login: ${response.reasonPhrase}");
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    data = data.isNotEmpty? data : ModalRoute.of(context)?.settings?.arguments as Map;
+    data = data.isNotEmpty ? data : ModalRoute.of(context)?.settings?.arguments as Map;
     login(data['email'], data['password']);
     return Scaffold(
         backgroundColor: Color(0xFF53197B),
