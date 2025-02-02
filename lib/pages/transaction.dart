@@ -452,7 +452,7 @@ class _TransactionState extends State<Transaction> {
                       padding: const EdgeInsets.fromLTRB(45, 25, 45, 25),
                       child: Column(
                         children: [
-                          Text('Today', style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold)),
+                          Text(DateFormat('EEEE').format(_selectedDate!).toString(), style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
