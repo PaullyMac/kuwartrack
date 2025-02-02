@@ -1,5 +1,5 @@
 category,expense,spent,date
-Entertainment,gaming,100,2025-01-30
+Entertainment,gaming,200,2025-01-30
 foodss,lollipop,10,2025-01-28
 Loan,Laptop,100,2025-01-27
 foodss,takoyaki,50,2025-01-22
@@ -8,7 +8,6 @@ Entertainments,streaming,500,2024-12-30
 Loan,Motor,600,2025-02-01
 foodss,pancit,100,2025-01-30
 foodss,noodles,50,2025-01-30
-Entertainment,netflix,500,2025-01-30
 food,pizza,150,2025-02-02
 entertainment,steam,500,2025-02-02
 food,halo-halo,110,2025-02-02

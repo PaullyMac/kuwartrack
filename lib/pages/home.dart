@@ -21,7 +21,7 @@ class _HomeState extends State<Home> {
   Map<String, double> category_total_expenses = {};
   bool isLoading = true; // To manage loading state
   late double overallTotal;
-  late Map<String, double> pie_percentages;
+  Map<String, double> pie_percentages = {};
   int _selectedIndexDate = 0;
   int transactions = 0;
   bool asc_or_desc = true; // ascending by default
@@ -78,6 +78,7 @@ class _HomeState extends State<Home> {
       setState(() {
         expense_list = fetchedExpenses;
         expenses = Expenses(fetchedExpenses);
+        print("heresay " + expense_list.toString());
         category_total_expenses = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
         // print("here?" + expense_list.length.toString());
         // get the total money spent for this week
@@ -87,6 +88,7 @@ class _HomeState extends State<Home> {
       });
     } catch (e) {
       setState(() {
+        expenses = Expenses([]);
         isLoading = false;
       });
       // Handle error gracefully
@@ -314,7 +316,7 @@ class _HomeState extends State<Home> {
 
 // Get data request
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final url = Uri.parse("https://f9a1-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},
