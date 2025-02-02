@@ -121,6 +121,36 @@ class _TransactionState extends State<Transaction> {
   }
 
 
+  // fetch expenses
+  Future<void> fetchExpenses(String userId) async {
+    try {
+      List<Expense> fetchedExpenses = await get_data(userId);
+      setState(() {
+        expenses.expenses  = fetchedExpenses;
+        expense_list = expenses.expenses;
+
+        // get default data
+        category_total_expenses = expenses.getTotalExpensesForAllCategoriesInSpecificDate(_selectedDate!); // You can safely dereference with `!` because it's no longer null here
+        overallTotal = category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+
+        // get data for current week
+        category_total_expenses_current_week = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
+        overallTotalThisWeek = category_total_expenses_current_week.values.fold(0, (accumulator, element) => accumulator + element);
+
+        // get data for current month
+        category_total_expenses_this_month = expenses.getTotalExpensesForAllCategoriesInCurrentMonth();
+        overallTotalThisMonth = category_total_expenses_this_month.values.fold(0, (accumulator, element) => accumulator + element);
+
+        // get data for current day
+        category_total_expenses_current_day = expenses.getTotalExpensesForAllCategoriesInCurrentDay();
+        overallTotalThisDay = category_total_expenses_current_day.values.fold(0, (accumulator, element) => accumulator + element);
+      });
+    } catch (e) {
+      // Handle error gracefully
+      print('Error fetching data: $e');
+    }
+  }
+
 
   // calendar
   Future<void> _pickDate(BuildContext context) async {
@@ -196,6 +226,121 @@ class _TransactionState extends State<Transaction> {
   }
 
 
+
+
+
+  // add category
+  void _addCategory(String category, String transaction, String moneySpent, String date, String userId) async {
+    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/add-category");
+
+    final data = {
+      'category': category.toLowerCase(),
+      'transaction': transaction.toLowerCase(),
+      'moneySpent': moneySpent,
+      'date': date,
+      'userId': userId,
+    };
+
+
+    final scaffoldContext = context;
+
+    try {
+      final response = await http.post(
+        url,
+        body: json.encode(data),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 201) {
+        fetchExpenses(userId);
+        print("Expense added successfully!");
+      } else if (response.statusCode == 409) {
+        if (scaffoldContext.mounted) {
+          ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+            const SnackBar(content: Text("Failed to add category. Please try another name for your transaction or category.")),
+          );
+        }
+        print("Duplicate entry! Expense already exists.");
+      } else {
+        print("Failed to add expense: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+  void _showAddCategoryDialog(BuildContext context) {
+    final categoryController = TextEditingController();
+    final transactionController = TextEditingController();
+    final moneyController = TextEditingController();
+
+    bool isSaveEnabled = false;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            void validateInputs() {
+              setState(() {
+                isSaveEnabled = categoryController.text.isNotEmpty &&
+                    transactionController.text.isNotEmpty &&
+                    moneyController.text.isNotEmpty &&
+                    double.tryParse(moneyController.text) != null;
+              });
+            }
+
+            return AlertDialog(
+              title: Text("Add Category"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: categoryController,
+                    decoration: InputDecoration(labelText: "Enter category name:"),
+                    onChanged: (value) => validateInputs(),
+                  ),
+                  TextField(
+                    controller: transactionController,
+                    decoration: InputDecoration(labelText: "Enter transaction name:"),
+                    onChanged: (value) => validateInputs(),
+                  ),
+                  TextField(
+                    controller: moneyController,
+                    decoration: InputDecoration(labelText: "Enter money amount:"),
+                    keyboardType: TextInputType.number, // Numeric keyboard
+                    onChanged: (value) => validateInputs(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: isSaveEnabled
+                      ? () {
+                    String newCategory = categoryController.text;
+                    String newTransaction = transactionController.text;
+                    String newMoney = moneyController.text;
+
+                    _addCategory(newCategory, newTransaction, newMoney,
+                        DateFormat('yyyy-MM-dd').format(_selectedDate!).toString(), user_id);
+
+                    Navigator.of(context).pop();
+                  }
+                      : null, // Disables button if conditions aren't met
+                  child: Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
 
 
@@ -345,8 +490,7 @@ class _TransactionState extends State<Transaction> {
                             children: [
                               GestureDetector(
                                 onTap: () {
-                                  // Define the action you want to perform on tap
-                                  print('Card clicked!');
+                                  _showAddCategoryDialog(context);
                                 },
                                 child: Card(
                                   elevation: 4.0, // Add a subtle shadow (optional)
@@ -516,3 +660,6 @@ Future<List<Expense>> get_data(String user_id) async {
     throw Exception('Failed to get data');
   }
 }
+
+
+
