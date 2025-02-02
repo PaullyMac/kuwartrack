@@ -59,7 +59,7 @@ class _EditState extends State<Edit> {
 
   // Get data request
   Future<List<Expense>> get_data(String user_id) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/api/auth/post_data");
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
@@ -99,6 +99,15 @@ class _EditState extends State<Edit> {
         totalSpentCategory = expense_list_category_data.fold(0, (sum, expense) => sum + (double.tryParse(expense.money_spent) ?? 0));
       });
     } catch (e) {
+      setState(() {
+        general_expenses_data = Expenses([]);
+        expense_list_category_data = [];
+        all_category_total_expenses= {};
+        overallTotal = 0;
+        percentage = '0';
+        totalSpentCategory = 0;
+      });
+      print("error recovery");
       // Handle error gracefully
       print('Error fetching data: $e');
     }
@@ -107,7 +116,7 @@ class _EditState extends State<Edit> {
 
 
   void _updateExpense(Expense expense, String newTransaction, String newAmount) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/update");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/update");
 
     final response = await http.put(
       url,
@@ -177,7 +186,7 @@ class _EditState extends State<Edit> {
   }
 
   void _deleteExpense(String category, String transaction, String date, String userId) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/delete");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/delete");
 
     // Prepare the data to be sent in the request body
     final data = {
@@ -208,7 +217,7 @@ class _EditState extends State<Edit> {
 
 
   void _addExpense(Expense expense, BuildContext context) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/add");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/add");
 
     final data = {
       'category': expense.category,
@@ -302,7 +311,7 @@ class _EditState extends State<Edit> {
 
 
   void _editCategoryname(String oldCategory, String newCategory, String date, String userId) async {
-    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/edit-category-name");
+    final url = Uri.parse("https://e585-130-105-115-165.ngrok-free.app/expenses/edit-category-name");
 
     final data = {
       'oldCategory': oldCategory,
