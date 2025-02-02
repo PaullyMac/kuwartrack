@@ -173,12 +173,124 @@ class _EditState extends State<Edit> {
     );
   }
 
+  void _deleteExpense(String category, String transaction, String date, String userId) async {
+    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/delete");
+
+    // Prepare the data to be sent in the request body
+    final data = {
+      'category': category,
+      'transaction': transaction,
+      'date': date,
+      'userId': userId,
+    };
+
+    try {
+      final response = await http.delete(
+        url,
+        body: json.encode(data),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        fetchExpenses(user_id_data);
+        print("Expense deleted successfully");
+        // Optionally, trigger a setState or update the UI
+      } else {
+        print("Failed to delete expense: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
 
 
+  void _addExpense(Expense expense, BuildContext context) async {
+    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/add");
+
+    // Prepare the data to be sent in the request body
+    final data = {
+      'category': expense.category,
+      'transaction': expense.transaction,
+      'spent': expense.money_spent,
+      'date': expense.date,
+      'userId': user_id_data,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        body: json.encode(data),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        fetchExpenses(user_id_data);
+        print("Expense added successfully");
+      } else {
+        if (mounted) {
+          // Show alert if the expense already exists
+          _showExpenseExistsDialog(context);
+        }
+        print("Failed to add expense: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
 
 
+  void _showAddExpenseDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        Expense expense; // Initialize Expense object
 
+        final transactionController = TextEditingController();
+        final amountController = TextEditingController();
 
+        return AlertDialog(
+          title: const Text("Add Transaction"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: transactionController,
+                decoration: const InputDecoration(labelText: "Transaction"),
+              ),
+              TextField(
+                controller: amountController,
+                decoration: const InputDecoration(labelText: "Amount"),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                expense = Expense(
+                  sample_data.category,
+                  transactionController.text,
+                  amountController.text,
+                  sample_data.date,
+                );
+
+                _addExpense(expense, context); // Pass context to handle the dialog
+
+                Navigator.of(context).pop(); // Close the dialog after trying to add expense
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
 
 
@@ -314,6 +426,96 @@ class _EditState extends State<Edit> {
                                       ],
                                     ),
 
+
+                                    // Add expense and Edit Name
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 20),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          // Add Expense button
+                                          SizedBox(
+                                            width: 90,
+                                            child: ElevatedButton(
+                                              onPressed: () { /* Your edit action */ },
+                                              style: ElevatedButton.styleFrom(
+                                                padding: EdgeInsets.zero,
+                                                backgroundColor: Colors.transparent,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(20),
+                                                ),
+                                              ),
+                                              child: InkWell(
+                                                onTap: ()=>{_showAddExpenseDialog(context)},
+                                                child: Ink(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    gradient: const LinearGradient(
+                                                      begin: Alignment.topCenter,
+                                                      end: Alignment.bottomCenter,
+                                                      colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
+                                                    ),
+                                                  ),
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                                    child: const Center(
+                                                      child: Text(
+                                                        'Add\nExpense',
+                                                        textAlign: TextAlign.center, // Center the text within the container
+                                                        style: TextStyle(color: Colors.black),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          // Edit Name button
+                                          SizedBox(
+                                            width: 90,
+                                            child: ElevatedButton(
+                                              onPressed: () { /* Your edit action */ },
+                                              style: ElevatedButton.styleFrom(
+                                                padding: EdgeInsets.zero,
+                                                backgroundColor: Colors.transparent,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(20),
+                                                ),
+                                              ),
+                                              child: InkWell(
+                                                child: Ink(
+                                                  decoration: BoxDecoration(
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    gradient: const LinearGradient(
+                                                      begin: Alignment.topCenter,
+                                                      end: Alignment.bottomCenter,
+                                                      colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
+                                                    ),
+                                                  ),
+                                                  child: Container(
+                                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                                    child: const Center(
+                                                      child: Text(
+                                                        'Edit\nName',
+                                                        textAlign: TextAlign.center, // Center the text within the container
+                                                        style: TextStyle(color: Colors.black),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+
+
+
+
+
                                     // Specific Transactions List with Separator
                                     ListView.builder(
                                       shrinkWrap: true,
@@ -363,6 +565,7 @@ class _EditState extends State<Edit> {
                                                   padding: const EdgeInsets.only(right: 20.0),
                                                   child: GestureDetector( // Add GestureDetector for tap functionality
                                                     onTap: () {
+                                                      _deleteExpense(sample_data.category, expense.transaction, expense.date, user_id_data);
                                                       // Handle image tap (e.g., edit)
                                                     },
                                                     child: Image.asset( // Or Image.network if you're loading from the internet
@@ -401,6 +604,36 @@ class _EditState extends State<Edit> {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+void _showExpenseExistsDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("Expense Already Exists"),
+        content: const Text("This expense already exists. Please check the details and try again."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      );
+    },
+  );
+}
 
 
 

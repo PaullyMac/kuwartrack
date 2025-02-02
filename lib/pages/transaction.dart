@@ -204,225 +204,230 @@ class _TransactionState extends State<Transaction> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  budgetBox("Day", overallTotalThisDay),
-                  SizedBox(width: 10),
-                  budgetBox("Week", overallTotalThisWeek),
-                  SizedBox(width: 10),
-                  budgetBox("Month", overallTotalThisMonth),
-                ],
-              ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  savingsBox("CURRENT SAVINGS", currentSavings),
-                  SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: setTodayBudget,
-                    child: savingsBox("Set Today's Budget", null),
-                  ),
-                  IconButton(
-                    icon: Image.asset(
-                      'assets/images/calendar.png', // Change to your actual image path
-                      width: 50,
-                      height: 50,
-                    ),
-                    onPressed: () => _pickDate(context),
-                  )
-                ],
-
-              ),
-              SizedBox(height: 20),
-
-
-              Container(
-                padding: EdgeInsets.fromLTRB(40, 16, 40, 16),
-                decoration: BoxDecoration(
-                  color: Color(0xFFFAC5FCA),
-                  borderRadius: BorderRadius.circular(50),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(3, 3),
-                    ),
+        child: SingleChildScrollView(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    budgetBox("Day", overallTotalThisDay),
+                    SizedBox(width: 10),
+                    budgetBox("Week", overallTotalThisWeek),
+                    SizedBox(width: 10),
+                    budgetBox("Month", overallTotalThisMonth),
                   ],
                 ),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 70, vertical: 10), // Added padding inside
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFFFFFFF), Color(0xFFCD8FF1)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    savingsBox("CURRENT SAVINGS", currentSavings),
+                    SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: setTodayBudget,
+                      child: savingsBox("Set Today's Budget", null),
                     ),
-                    borderRadius: BorderRadius.circular(100), // Match the outer container's borderRadius
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min, // Prevents Column from stretching
-                    mainAxisAlignment: MainAxisAlignment.center, // Centers content inside
-                    children: [
-                      Text(
-                        "Today's Budget",
-                        style: TextStyle(fontSize: 18, color: Colors.black),
-                        textAlign: TextAlign.center, // Ensures text is centered
+                    IconButton(
+                      icon: Image.asset(
+                        'assets/images/calendar.png', // Change to your actual image path
+                        width: 50,
+                        height: 50,
                       ),
-                      SizedBox(height: 5),
-                      Text(
-                        "₱${todayBudget.toStringAsFixed(2)}",
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
-                        textAlign: TextAlign.center,
+                      onPressed: () => _pickDate(context),
+                    )
+                  ],
+          
+                ),
+                SizedBox(height: 20),
+          
+          
+                Container(
+                  padding: EdgeInsets.fromLTRB(40, 16, 40, 16),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFAC5FCA),
+                    borderRadius: BorderRadius.circular(50),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        offset: Offset(3, 3),
                       ),
                     ],
                   ),
-                ),
-              ),
-              SizedBox(height: 20),
-
-
-
-              Card(
-                elevation: 4.0, // Add a subtle shadow (optional)
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(60),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFE9DDFE), Color(0xFF8484CE)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 70, vertical: 10), // Added padding inside
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFFFFF), Color(0xFFCD8FF1)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(100), // Match the outer container's borderRadius
                     ),
-                    borderRadius: BorderRadius.circular(100), // Match the Card's borderRadius
-                  ),
-                  child: Padding( // Use Padding inside the Card
-                    padding: const EdgeInsets.fromLTRB(45, 25, 45, 25),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min, // Prevents Column from stretching
+                      mainAxisAlignment: MainAxisAlignment.center, // Centers content inside
                       children: [
-                        Text('Today', style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold)),
+                        Text(
+                          "Today's Budget",
+                          style: TextStyle(fontSize: 18, color: Colors.black),
+                          textAlign: TextAlign.center, // Ensures text is centered
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          "₱${todayBudget.toStringAsFixed(2)}",
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   ),
                 ),
-              ),
-
-
-
-              Container(
-                height: 260,
-                margin: EdgeInsets.only(bottom:0, top: 50, left: 10, right: 10), // Keep your bottom margin
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Color(0xFFAE60CC),
-                  borderRadius: BorderRadius.circular(20), // Fully rounded corners
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(3, 3), // Added slight offset for depth
+                SizedBox(height: 20),
+          
+          
+          
+                Card(
+                  elevation: 4.0, // Add a subtle shadow (optional)
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(60),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFE9DDFE), Color(0xFF8484CE)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(100), // Match the Card's borderRadius
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    // ADD CATEGORY
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Padding( // Use Padding inside the Card
+                      padding: const EdgeInsets.fromLTRB(45, 25, 45, 25),
+                      child: Column(
                         children: [
-                          GestureDetector(
-                            onTap: () {
-                              // Define the action you want to perform on tap
-                              print('Card clicked!');
-                            },
-                            child: Card(
-                              elevation: 4.0, // Add a subtle shadow (optional)
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(60),
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                  ),
-                                  borderRadius: BorderRadius.circular(100), // Match the Card's borderRadius
-                                ),
-                                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
-                                child: Column(children: [Text('Add', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), Text('Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))],),
-                              ),
-                            ),
-                          ),
-
-                          // DETAILS
-                          Card(
-                            color: Colors.purple[100],
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                Row(
-                                  children: [
-                                    Text('Date: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                    Text('${_selectedDate != null
-                                        ? DateFormat('MMMM dd, yyyy').format(_selectedDate!)  // Format the selected date
-                                        : DateFormat('MMMM dd, yyyy').format(DateTime.now())}')
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Text('Overall Spent: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                    Text('₱${overallTotal}')
-                                  ],
-                                )
-                              ],),
-                            ),
-                          )
+                          Text('Today', style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold)),
                         ],
-
                       ),
                     ),
-
-                    // Expense list widgets
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children:
-                          category_total_expenses.entries.map((entry) {
-                            String category = entry.key;
-                            double totalSpent = entry.value;
-                            transactions = expenses.getTotalTransactionsForCategoryOnSpecificDate(entry.key, _selectedDate ?? DateTime.now());
-                            double percentage = (overallTotal > 0) ? (totalSpent / overallTotal) * 100 : 0; // Calculate percentage
-
-                            return TransactionExpenseCard(
-                              category: category,
-                              transactions: transactions.toString(),
-                              totalSpent: totalSpent.toString(),
-                              percentage: percentage.toString(),
-                              onTapEdit: () => _onTapEdit(entry.key), // pass the function itself, not _onTapEdit(entry.key) which is a result
-                            );
-                          }).toList(),
+                  ),
+                ),
+          
+          
+          
+                Container(
+                  height: 260,
+                  margin: EdgeInsets.only(bottom:0, top: 50, left: 10, right: 10), // Keep your bottom margin
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFAE60CC),
+                    borderRadius: BorderRadius.circular(20), // Fully rounded corners
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                        offset: Offset(3, 3), // Added slight offset for depth
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+          
+                      // ADD CATEGORY
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  // Define the action you want to perform on tap
+                                  print('Card clicked!');
+                                },
+                                child: Card(
+                                  elevation: 4.0, // Add a subtle shadow (optional)
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(60),
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                                      borderRadius: BorderRadius.circular(100), // Match the Card's borderRadius
+                                    ),
+                                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+                                    child: Column(children: [Text('Add', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)), Text('Category', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))],),
+                                  ),
+                                ),
+                              ),
+                                    
+                              // DETAILS
+                              Card(
+                                color: Colors.purple[100],
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                    Row(
+                                      children: [
+                                        Text('Date: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                        Text('${_selectedDate != null
+                                            ? DateFormat('MMMM dd, yyyy').format(_selectedDate!)  // Format the selected date
+                                            : DateFormat('MMMM dd, yyyy').format(DateTime.now())}')
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text('Overall Spent: ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                        Text('₱${overallTotal}')
+                                      ],
+                                    )
+                                  ],),
+                                ),
+                              )
+                            ],
+                                    
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              )
+          
+                      // Expense list widgets
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children:
+                            category_total_expenses.entries.map((entry) {
+                              String category = entry.key;
+                              double totalSpent = entry.value;
+                              transactions = expenses.getTotalTransactionsForCategoryOnSpecificDate(entry.key, _selectedDate ?? DateTime.now());
+                              double percentage = (overallTotal > 0) ? (totalSpent / overallTotal) * 100 : 0; // Calculate percentage
 
-            ],
+                              return TransactionExpenseCard(
+                                category: category,
+                                transactions: transactions.toString(),
+                                totalSpent: totalSpent.toString(),
+                                percentage: percentage.toString(),
+                                onTapEdit: () => _onTapEdit(entry.key), // pass the function itself, not _onTapEdit(entry.key) which is a result
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+          
+              ],
+            ),
           ),
         ),
       ),

@@ -12,77 +12,88 @@ class TransactionExpenseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.purple[100],
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                flex: 4,
-                child: Padding(
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Card(
+        color: Colors.purple[100],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal, // Make the scroll horizontal
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start, // Align to the start
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                // Category and Percentage
+                Padding(
                   padding: EdgeInsets.only(right: 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         category,
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                         overflow: TextOverflow.ellipsis, // Truncate if too long
-                        maxLines: 1, // Keep it in a single line
-                        softWrap: false, // Prevents wrapping to the next line
+                        maxLines: 1, // Prevent wrapping to next line
+                        softWrap: false, // Prevent wrapping
                       ),
-                      Padding(padding: EdgeInsets.only(left: 20),child: Text('${double.parse(percentage).toStringAsFixed(2)}%', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)))
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Text(
+                          '${double.parse(percentage).toStringAsFixed(2)}%',
+                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                        ),
+                      )
                     ],
                   ),
                 ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Column(
+
+                // Transactions and Total Spent
+                Padding(
+                  padding: const EdgeInsets.only(right: 40),
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [Text('Transactions:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    children: [
+                      Text('Transactions:', style: TextStyle(fontWeight: FontWeight.bold)),
                       Text('$transactions'),
                       Text('Total Spent: ', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('₱${double.parse(totalSpent).toStringAsFixed(2)}')
-                    ]),
-              ),
+                      Text('₱${double.parse(totalSpent).toStringAsFixed(2)}'),
+                    ],
+                  ),
+                ),
 
-              Expanded(
-                flex: 3,
-                child: Column(
+                // Buttons (Edit/View)
+                Column(
                   children: [
-                    // Edit
+                    // Edit button
                     SizedBox(
                       width: 90,
                       height: 50,
-                      child: ElevatedButton( // Use ElevatedButton directly
+                      child: ElevatedButton(
                         onPressed: () { /* Your edit action */ },
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.zero, // Remove default padding
-                          backgroundColor: Colors.transparent, // Make button background transparent
+                          padding: EdgeInsets.zero,
+                          backgroundColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
                         child: InkWell(
-                          child: Ink(// Use Ink widget for gradient
+                          child: Ink(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
                               gradient: const LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [
-                                  Color(0xFFFBBEDE),
-                                  Color(0xFFFF82C4),
-                                ],
+                                colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
                               ),
                             ),
-                            child: Container( // Container for padding and centering
-                              padding: const EdgeInsets.symmetric(vertical: 10), // Add padding
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                               child: const Center(
                                 child: Text(
                                   'View',
@@ -94,37 +105,34 @@ class TransactionExpenseCard extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 8),
-                    // View
+
+                    // View button
                     SizedBox(
                       width: 90,
                       height: 50,
-                      child: ElevatedButton( // Use ElevatedButton directly
+                      child: ElevatedButton(
                         onPressed: () { /* Your edit action */ },
                         style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.zero, // Remove default padding
-                          backgroundColor: Colors.transparent, // Make button background transparent
+                          padding: EdgeInsets.zero,
+                          backgroundColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
                         ),
                         child: InkWell(
                           onTap: onTapEdit,
-                          child: Ink( // Use Ink widget for gradient
+                          child: Ink(
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
                               gradient: const LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [
-                                  Color(0xFFFBBEDE),
-                                  Color(0xFFFF82C4),
-                                ],
+                                colors: [Color(0xFFFBBEDE), Color(0xFFFF82C4)],
                               ),
                             ),
-                            child: Container( // Container for padding and centering
-                              padding: const EdgeInsets.symmetric(vertical: 10), // Add padding
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                               child: const Center(
                                 child: Text(
                                   'Edit',
@@ -138,8 +146,10 @@ class TransactionExpenseCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              )
-            ]),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

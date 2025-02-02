@@ -191,46 +191,49 @@ class _HomeState extends State<Home> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Sort by widgets
-                      sort_by_type?
-                      ElevatedButton.icon(
-                        onPressed: () {setState(() {
-                          sort_by_type = !sort_by_type;
-                          category_total_expenses = sortedDesc(category_total_expenses, sort_by_type);
-                        });},
-                        icon: Icon(Icons.sort),
-                        label: Text('Sort by percentage'),
-                      ):
-                      ElevatedButton.icon(
-                        onPressed: () {setState(() {
-                          sort_by_type = !sort_by_type;
-                          category_total_expenses = sortedAsc(category_total_expenses, sort_by_type);
-                        });},
-                        icon: Icon(Icons.sort),
-                        label: Text('Sort by category'),
-                      ),
-                      // Sort Ascending or Descending Widgets
-                      asc_or_desc?
-                      ElevatedButton.icon(
-                        onPressed: () {setState(() {
-                          asc_or_desc = !asc_or_desc;
-                          category_total_expenses = sortedDesc(category_total_expenses, sort_by_type);
-                        });},
-                        icon: Icon(Icons.arrow_upward),
-                        label: Text('Ascending'),
-                      ):
-                      ElevatedButton.icon(
-                        onPressed: () {setState(() {
-                          asc_or_desc = !asc_or_desc;
-                          category_total_expenses = sortedAsc(category_total_expenses, sort_by_type);
-                        });},
-                        icon: Icon(Icons.arrow_downward),
-                        label: Text('Descending'),
-                      ),
-                    ],
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Sort by widgets
+                        sort_by_type?
+                        ElevatedButton.icon(
+                          onPressed: () {setState(() {
+                            sort_by_type = !sort_by_type;
+                            category_total_expenses = sortedDesc(category_total_expenses, sort_by_type);
+                          });},
+                          icon: Icon(Icons.sort),
+                          label: Text('Sort by percentage'),
+                        ):
+                        ElevatedButton.icon(
+                          onPressed: () {setState(() {
+                            sort_by_type = !sort_by_type;
+                            category_total_expenses = sortedAsc(category_total_expenses, sort_by_type);
+                          });},
+                          icon: Icon(Icons.sort),
+                          label: Text('Sort by category'),
+                        ),
+                        // Sort Ascending or Descending Widgets
+                        asc_or_desc?
+                        ElevatedButton.icon(
+                          onPressed: () {setState(() {
+                            asc_or_desc = !asc_or_desc;
+                            category_total_expenses = sortedDesc(category_total_expenses, sort_by_type);
+                          });},
+                          icon: Icon(Icons.arrow_upward),
+                          label: Text('Ascending'),
+                        ):
+                        ElevatedButton.icon(
+                          onPressed: () {setState(() {
+                            asc_or_desc = !asc_or_desc;
+                            category_total_expenses = sortedAsc(category_total_expenses, sort_by_type);
+                          });},
+                          icon: Icon(Icons.arrow_downward),
+                          label: Text('Descending'),
+                        ),
+                      ],
+                    ),
                   ),
                   SizedBox(height: 10),
                   // Expense list widgets
