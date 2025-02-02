@@ -7,10 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -19,50 +17,48 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/auth") // Base path for all methods in this controller
 public class AuthController {
+    private static final String USER_CREDENTIALS_FILE = "src/main/data/user_creds.csv"; // New writable location
 
-    // POST endpoint to handle login requests
+    // POST endpoint for login request
     @PostMapping("/login")
     public ResponseEntity<LoginRequest> login(@RequestBody LoginRequest loginRequest) {
         return validateCredentials(loginRequest.getUser(), loginRequest.getPassword());
     }
 
-    // GET endpoint to test login request (used for browser testing ko lang ito)
+    // GET endpoint for testing login via browser (e.g., ?user=admin&password=admin)
     @GetMapping("/login")
-    public ResponseEntity<LoginRequest> testLogin(@RequestParam String user, @RequestParam String password) { // ganto itsura ng arguments ?user=admin&password=admin
+    public ResponseEntity<LoginRequest> testLogin(@RequestParam String user, @RequestParam String password) {
         return validateCredentials(user, password);
     }
 
-    // Method to validate user credentials against the CSV file
+    // Method to validate user credentials from CSV
     private ResponseEntity<LoginRequest> validateCredentials(String user, String password) {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("user_creds.csv");// Path to your CSV file kaya palitan neo to depende sa file path ng csv
+        File file = new File(USER_CREDENTIALS_FILE);
+        if (!file.exists()) {
+            return ResponseEntity.status(404).build(); // Return 404 if file is missing
+        }
+
         try {
-            if (inputStream == null) {
-                throw new FileNotFoundException("File not found in classpath");
-            }
-            List<String> lines = new BufferedReader(new InputStreamReader(inputStream))
-                    .lines()
-                    .collect(Collectors.toList());
-            
-            boolean firstLine = true; // Flag to track the first line
+            List<String> lines = Files.readAllLines(Paths.get(USER_CREDENTIALS_FILE), StandardCharsets.UTF_8);
+            boolean firstLine = true; // Skip headers
+
             for (String line : lines) {
                 if (firstLine) {
-                    firstLine = false; // Skip the first line kasi field names ung first line.
-                    continue; // Go to the next iteration
+                    firstLine = false;
+                    continue;
                 }
 
-                String[] fields = line.split(","); // ["username", "password", "id"]
-                if (fields.length >= 2 && fields[0].equals(user) && fields[1].equals(password)) { // Check for array bounds
-//                    System.out.println("checkpoint");
-                    LoginRequest user_data = new LoginRequest(fields[0], fields[1], fields[2]);
-                    return ResponseEntity.ok(user_data);
+                String[] fields = line.split(","); // [username, password, id]
+                if (fields.length >= 3 && fields[0].equals(user) && fields[1].equals(password)) {
+                    return ResponseEntity.ok(new LoginRequest(fields[0], fields[1], fields[2]));
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build(); // Important: Return an error response
+            return ResponseEntity.internalServerError().build();
         }
-//        System.out.println("false checkpoint");
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // Return 404 if credentials are invalid
     }
 }
 

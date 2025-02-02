@@ -6,70 +6,62 @@ import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
 public class dataController {
+    private static final String BASE_DIRECTORY = "C:\\Users\\RJ\\Documents\\project\\kuwartrack\\demo\\src\\main\\data\\"; // New writable location
 
-    // GET endpoint to test login request (used for browser testing ko lang ito)
+    // GET endpoint to retrieve expenses (test via browser)
     @GetMapping("/get_data")
-    public ResponseEntity<List<List<String>>> testGetData(@RequestParam String user_id) { // ganto itsura ng arguments ?user=admin&password=admin
+    public ResponseEntity<List<List<String>>> testGetData(@RequestParam String user_id) {
         return getExpenses(user_id);
     }
 
-    // GET endpoint to test login request (used for browser testing ko lang ito)
+    // POST endpoint to retrieve expenses (test via HTTP request)
     @PostMapping("/post_data")
-    public ResponseEntity<List<List<String>>> GetData(@RequestBody UserRequest userRequest) { // ganto itsura ng arguments ?user=admin&password=admin
-        System.out.println("here?");
+    public ResponseEntity<List<List<String>>> getData(@RequestBody UserRequest userRequest) {
         return getExpenses(userRequest.getUserId());
     }
 
-    // Method to validate user credentials against the CSV file
+    // Method to fetch expenses from CSV
     private ResponseEntity<List<List<String>>> getExpenses(String user_id) {
+        List<List<String>> rows = new ArrayList<>();
+        String filePath = BASE_DIRECTORY + user_id + "\\expenses.csv";
 
-        List<List<String>> rows  =new ArrayList<List<String>>();
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return ResponseEntity.status(404).body(Collections.emptyList()); // Return empty if file not found
+        }
 
-        String filePath = user_id + "/" + "expenses.csv";
-
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath);// Path to your CSV file kaya palitan neo to depende sa file path ng csv
         try {
-            if (inputStream == null) {
-                throw new FileNotFoundException("File not found in classpath");
-            }
-            List<String> lines = new BufferedReader(new InputStreamReader(inputStream))
-                    .lines()
-                    .collect(Collectors.toList());
+            List<String> lines = Files.readAllLines(Paths.get(filePath), StandardCharsets.UTF_8);
+            boolean firstLine = true; // Skip the first row (column headers)
 
-            boolean firstLine = true; // Flag to track the first line
             for (String line : lines) {
                 if (firstLine) {
-                    firstLine = false; // Skip the first line kasi field names ung first line.
-                    continue; // Go to the next iteration
+                    firstLine = false;
+                    continue;
                 }
-
-                String[] fields = line.split(","); // [category,expense,spent,date]
+                String[] fields = line.split(",");
                 rows.add(Arrays.asList(fields));
             }
 
             return ResponseEntity.ok(rows);
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().build(); // Important: Return an error response
+            return ResponseEntity.internalServerError().build(); // Return error response
         }
-//        System.out.println("false checkpoint");
-//        return ResponseEntity.ok(rows);
     }
-
 }
 
 // DTO for User Request (used in POST body)

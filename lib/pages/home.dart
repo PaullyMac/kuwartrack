@@ -311,7 +311,7 @@ class _HomeState extends State<Home> {
 
 // Get data request
 Future<List<Expense>> get_data(String user_id) async {
-  final url = Uri.parse("https://52e1-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
   final response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},

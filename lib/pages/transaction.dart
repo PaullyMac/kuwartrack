@@ -146,12 +146,55 @@ class _TransactionState extends State<Transaction> {
   }
 
   // Edit
-  void _onTapEdit(String key){
+  void _onTapEdit(String key) async {
+    // Get the filtered list of expenses by category and date
+    List<Expense> expenses_by_category_and_date = expenses.getExpensesByCategoryAndDate(
+        key, DateFormat('yyyy-MM-dd').format(_selectedDate!).toString()
+    );
 
-    List<Expense> expenses_by_category_and_date = expenses.getExpensesByCategoryAndDate(key, DateFormat('yyyy-MM-dd').format(_selectedDate!).toString());
-    Navigator.push(context, MaterialPageRoute(builder: (context) => Edit(expenses: expenses,  expense_list: expenses_by_category_and_date, user_id: user_id,)));
+    // Wait for the Edit screen to pop back
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => Edit(
+              expenses: expenses,
+              expense_list: expenses_by_category_and_date,
+              user_id: user_id,
+            )
+        )
+    );
 
+    // Call setState after the Edit screen pops back
+    setState(() async {
+      try {
+        List<Expense> fetchedExpenses = await get_data(user_id);
+        setState(() {
+          expenses.expenses  = fetchedExpenses;
+          expense_list = expenses.expenses;
+
+          // get default data
+          category_total_expenses = expenses.getTotalExpensesForAllCategoriesInSpecificDate(_selectedDate!); // You can safely dereference with `!` because it's no longer null here
+          overallTotal = category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+
+          // get data for current week
+          category_total_expenses_current_week = expenses.getTotalExpensesForAllCategoriesInCurrentWeek();
+          overallTotalThisWeek = category_total_expenses_current_week.values.fold(0, (accumulator, element) => accumulator + element);
+
+          // get data for current month
+          category_total_expenses_this_month = expenses.getTotalExpensesForAllCategoriesInCurrentMonth();
+          overallTotalThisMonth = category_total_expenses_this_month.values.fold(0, (accumulator, element) => accumulator + element);
+
+          // get data for current day
+          category_total_expenses_current_day = expenses.getTotalExpensesForAllCategoriesInCurrentDay();
+          overallTotalThisDay = category_total_expenses_current_day.values.fold(0, (accumulator, element) => accumulator + element);
+        });
+      } catch (e) {
+        // Handle error gracefully
+        print('Error fetching data: $e');
+      }
+    });
   }
+
 
 
 
@@ -440,3 +483,31 @@ class _TransactionState extends State<Transaction> {
   }
 }
 
+
+Future<List<Expense>> get_data(String user_id) async {
+  final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
+  final response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({"user_id": user_id}),
+  );
+  if (response.statusCode == 200) {
+    if (jsonDecode(response.body) != null) {
+      // Decoding the JSON response
+      final decodedResponse = jsonDecode(response.body) as List<dynamic>;
+      final expenses = decodedResponse.map((expense) => Expense(
+        expense[0] as String,
+        expense[1] as String,
+        expense[2] as String,
+        expense[3] as String,
+      )).toList();
+      return expenses;
+    } else {
+      // Handle the case where the response is null
+      return [];
+    }
+  } else {
+    // Handle the case where the request fails
+    throw Exception('Failed to get data');
+  }
+}

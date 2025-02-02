@@ -19,8 +19,8 @@ class Edit extends StatefulWidget {
 }
 
 class _EditState extends State<Edit> {
-  late Expenses expenses_data;
-  late List<Expense> expense_list_data;
+  late Expenses general_expenses_data;
+  late List<Expense> expense_list_category_data;
   late Expenses expenses_data_category;
   late Expense sample_data;
   late DateTime date;
@@ -31,6 +31,7 @@ class _EditState extends State<Edit> {
   int transactions = 0;
   double todayBudget = 0;
   String percentage = '0';
+  late String user_id_data;
 
 
 
@@ -38,20 +39,148 @@ class _EditState extends State<Edit> {
     // TODO: implement initState
     super.initState();
 
-    expense_list_data = widget.expense_list;
-    expenses_data = widget.expenses;
-    expenses_data_category = Expenses(expense_list_data);
-    if(expense_list_data.isNotEmpty){
-      sample_data = expense_list_data.first;
+    expense_list_category_data = widget.expense_list;
+    general_expenses_data = widget.expenses;
+    expenses_data_category = Expenses(expense_list_category_data);
+    if(expense_list_category_data.isNotEmpty){
+      user_id_data = widget.user_id;
+      sample_data = expense_list_category_data.first;
       date = DateTime.parse(sample_data.date);
       date_formatted = DateFormat('MMMM dd, yyyy').format(date);
-      all_category_total_expenses= expenses_data.getTotalExpensesForAllCategoriesInSpecificDate(date);
+      all_category_total_expenses= general_expenses_data.getTotalExpensesForAllCategoriesInSpecificDate(date);
       overallTotal = all_category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
-      percentage = expenses_data.getCategoryPercentagesForCategoryOnSpecificDate(sample_data.category, sample_data.date).toStringAsFixed(2);
-      totalSpentCategory = expense_list_data.fold(0, (sum, expense) => sum + (double.tryParse(expense.money_spent) ?? 0));
+      percentage = general_expenses_data.getCategoryPercentagesForCategoryOnSpecificDate(sample_data.category, sample_data.date).toStringAsFixed(2);
+      totalSpentCategory = expense_list_category_data.fold(0, (sum, expense) => sum + (double.tryParse(expense.money_spent) ?? 0));
     }
 
   }
+
+  // Get data request
+  Future<List<Expense>> get_data(String user_id) async {
+    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/api/auth/post_data");
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"user_id": user_id}),
+    );
+    if (response.statusCode == 200) {
+      if (jsonDecode(response.body) != null) {
+        // Decoding the JSON response
+        final decodedResponse = jsonDecode(response.body) as List<dynamic>;
+        final expenses = decodedResponse.map((expense) => Expense(
+          expense[0] as String,
+          expense[1] as String,
+          expense[2] as String,
+          expense[3] as String,
+        )).toList();
+        return expenses;
+      } else {
+        // Handle the case where the response is null
+        return [];
+      }
+    } else {
+      // Handle the case where the request fails
+      throw Exception('Failed to get data');
+    }
+  }
+
+  Future<void> fetchExpenses(String userId) async {
+    try {
+      List<Expense> fetchedExpenses = await get_data(userId);
+      setState(() {
+        general_expenses_data = Expenses(fetchedExpenses);
+        expense_list_category_data = general_expenses_data.getExpensesByCategoryAndDate(sample_data.category, sample_data.date);
+        all_category_total_expenses= general_expenses_data.getTotalExpensesForAllCategoriesInSpecificDate(date);
+        overallTotal = all_category_total_expenses.values.fold(0, (accumulator, element) => accumulator + element);
+        percentage = general_expenses_data.getCategoryPercentagesForCategoryOnSpecificDate(sample_data.category, sample_data.date).toStringAsFixed(2);
+        totalSpentCategory = expense_list_category_data.fold(0, (sum, expense) => sum + (double.tryParse(expense.money_spent) ?? 0));
+      });
+    } catch (e) {
+      // Handle error gracefully
+      print('Error fetching data: $e');
+    }
+  }
+
+
+
+  void _updateExpense(Expense expense, String newTransaction, String newAmount) async {
+    final url = Uri.parse("https://d9b9-130-105-115-165.ngrok-free.app/expenses/update");
+
+    final response = await http.put(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "category": expense.category,
+        "transaction": newTransaction,
+        "spent": newAmount,
+        "date": expense.date,
+        "userId": user_id_data
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      fetchExpenses(user_id_data);
+      print("Expense updated successfully");
+    } else {
+      print("Failed to update expense: ${response.body}");
+    }
+  }
+
+  void _showEditDialog(BuildContext context, Expense expense) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final transactionController = TextEditingController(text: expense.transaction);
+        final amountController = TextEditingController(text: expense.money_spent);
+
+        return AlertDialog(
+          title: Text("Edit Transaction"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: transactionController,
+                decoration: InputDecoration(labelText: "Transaction"),
+              ),
+              TextField(
+                controller: amountController,
+                decoration: InputDecoration(labelText: "Amount"),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                String newTransaction = transactionController.text;
+                String newAmount = amountController.text;
+
+                _updateExpense(expense, newTransaction, newAmount);
+
+                Navigator.of(context).pop();
+              },
+              child: Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
+
+
+
+
+
+
 
 
   @override
@@ -86,7 +215,7 @@ class _EditState extends State<Edit> {
                               child: Column(
                                 children: [
                                   Text('Date: ', style: TextStyle(fontSize: 20)),
-                                  expense_list_data.isNotEmpty
+                                  expense_list_category_data.isNotEmpty
                                       ? Text(date_formatted, style: TextStyle(fontSize: 22))
                                       : Text(''),
                                 ],
@@ -167,8 +296,8 @@ class _EditState extends State<Edit> {
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(sample_data.category),
-                                              Text(percentage + "%"),
+                                              Text(sample_data.category, style: TextStyle(fontWeight: FontWeight.bold)),
+                                              Text(percentage + "%", style: TextStyle(fontWeight: FontWeight.bold)),
                                             ],
                                           ),
                                         ),
@@ -177,7 +306,7 @@ class _EditState extends State<Edit> {
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text("Transactions: " + expense_list_data.length.toString()),
+                                              Text("Transactions: " + expense_list_category_data.length.toString()),
                                               Text("Total Spent: ₱" + totalSpentCategory.toString()),
                                             ],
                                           ),
@@ -186,29 +315,73 @@ class _EditState extends State<Edit> {
                                     ),
 
                                     // Specific Transactions List with Separator
-                                    Column(
-                                      children: expense_list_data.map((expense) {
+                                    ListView.builder(
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemCount: expense_list_category_data.length,
+                                      itemBuilder: (context, index) {
+                                        final expense = expense_list_category_data[index];
                                         return Column(
                                           children: [
                                             Padding(
                                               padding: const EdgeInsets.all(8.0),
                                               child: Divider(
-                                                color: Colors.black, // Change color if needed
-                                                thickness: 2,        // Change thickness if needed
+                                                color: Colors.black,
+                                                thickness: 2,
                                               ),
                                             ),
-                                            Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                              child: ListTile(
-                                                title: Text(expense.transaction, style: TextStyle(fontWeight: FontWeight.bold)),
-                                                subtitle: Text("Spent: ₱${expense.money_spent} "),
-                                                leading: Icon(Icons.shopping_bag), // Example icon
-                                              ),
+                                            Row( // The Row you want to add
+                                              children: [
+                                                Expanded( // Important: Use Expanded to prevent Row from taking infinite width
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.only(left: 20),
+                                                    child: ListTile(
+                                                      title: Text(expense.transaction, style: TextStyle(fontWeight: FontWeight.bold)),
+                                                      subtitle: Text("Spent: ₱${expense.money_spent}"),
+                                                    ),
+                                                  ),
+                                                ),
+                                                // Add other widgets to the Row here if needed
+                                                // EDIT
+                                                Padding(
+                                                  padding: const EdgeInsets.only(right: 20.0),
+                                                  child: GestureDetector( // Add GestureDetector for tap functionality
+                                                    onTap: () {
+                                                      _showEditDialog(context, expense);
+                                                      // Handle image tap (e.g., edit)
+                                                    },
+                                                    child: Image.asset( // Or Image.network if you're loading from the internet
+                                                      'assets/images/edit.png', // Replace with your image path
+                                                      height: 45, // Adjust height as needed
+                                                      width: 45,   // Adjust width as needed
+                                                      fit: BoxFit.contain, // Or BoxFit.cover, BoxFit.fill, etc. as needed
+                                                    ),
+                                                  ),
+                                                ),
+                                                // DELETE
+                                                Padding(
+                                                  padding: const EdgeInsets.only(right: 20.0),
+                                                  child: GestureDetector( // Add GestureDetector for tap functionality
+                                                    onTap: () {
+                                                      // Handle image tap (e.g., edit)
+                                                    },
+                                                    child: Image.asset( // Or Image.network if you're loading from the internet
+                                                      'assets/images/delete.png', // Replace with your image path
+                                                      height: 45, // Adjust height as needed
+                                                      width: 45,   // Adjust width as needed
+                                                      fit: BoxFit.contain, // Or BoxFit.cover, BoxFit.fill, etc. as needed
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         );
-                                      }).toList(),
+                                      },
                                     ),
+
+
+
                                   ],
                                 ),
                               ),
@@ -226,5 +399,8 @@ class _EditState extends State<Edit> {
       ),
     );
   }
-
 }
+
+
+
+
